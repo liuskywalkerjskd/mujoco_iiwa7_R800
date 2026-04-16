@@ -32,7 +32,7 @@ iiwa7-mujoco/
 ├── demo_current_state_ff.py           当前态 ID FF + task-PD (最佳控制器)
 ├── demo_motions.py                    3 个动作：水平方形/圆/抓取
 ├── demo_motions_v2.py                 5 个动作：8字/螺旋/避障/堆叠/6-DOF
-├── iiwa7/                             MJCF 模型文件
+├── iiwa7/                             MJCF 模型文件（仅 XML/URDF）
 │   ├── iiwa7.urdf                       剥 ROS 标签的纯 URDF（中间产物）
 │   ├── iiwa7.xml                        基础 MJCF（URDF 自动转换）
 │   ├── iiwa7_tuned.xml                  menagerie 风格精调模型 ⭐
@@ -42,8 +42,9 @@ iiwa7-mujoco/
 │   ├── iiwa7_tuned_square_scene.xml     精调版方形场景
 │   ├── iiwa7_obstacle_scene.xml         避障场景（红柱）
 │   ├── iiwa7_stack_scene.xml            双 cube 堆叠场景
-│   ├── iiwa7_pickplace_scene.xml        抓放场景
-│   └── *.mp4                            demo 视频
+│   └── iiwa7_pickplace_scene.xml        抓放场景
+├── media/videos/                      demo 视频（MP4）
+│   └── *.mp4                            所有录制视频
 └── meshes/iiwa7/                      visual + collision STL mesh
 ```
 
@@ -151,7 +152,7 @@ iiwa7-mujoco/
 ├── demo_current_state_ff.py           current-state ID FF + task-PD (best)
 ├── demo_motions.py                    3 motions: hsquare / vcircle / pickplace
 ├── demo_motions_v2.py                 5 motions: fig8 / spiral / obstacle / stack / 6-DOF
-├── iiwa7/                             MJCF assets
+├── iiwa7/                             MJCF assets (XML/URDF only)
 │   ├── iiwa7.urdf                       cleaned pure URDF (intermediate)
 │   ├── iiwa7.xml                        base MJCF (auto-converted)
 │   ├── iiwa7_tuned.xml                  menagerie-style tuned model ⭐
@@ -161,8 +162,9 @@ iiwa7-mujoco/
 │   ├── iiwa7_tuned_square_scene.xml     tuned + square overlay
 │   ├── iiwa7_obstacle_scene.xml         pillar obstacle scene
 │   ├── iiwa7_stack_scene.xml            two-cube stacking scene
-│   ├── iiwa7_pickplace_scene.xml        pick-and-place scene
-│   └── *.mp4                            demo videos
+│   └── iiwa7_pickplace_scene.xml        pick-and-place scene
+├── media/videos/                      demo videos (MP4)
+│   └── *.mp4                            all rendered clips
 └── meshes/iiwa7/                      visual + collision STL
 ```
 
@@ -260,42 +262,42 @@ H.264 MP4, 720×540 @ 30 fps, and embedded below for inline playback on GitHub.
 > 展示完整控制器栈：current-state ID FF + task-PD  
 > flagship demo — 30×30 cm horizontal square traced twice
 
-<video src="iiwa7/demo_square_current_state_ff.mp4" controls muted playsinline preload="metadata" width="720"></video>
+<video src="https://raw.githubusercontent.com/liuskywalkerjskd/iiwa7-mujoco/main/media/videos/demo_square_current_state_ff.mp4" controls muted playsinline preload="metadata" width="720"></video>
 
 ### 2. 垂直圆 / Vertical circle
 
 > mean 5.65 mm / max 14.24 mm — XZ 平面半径 15 cm，2 圈  
 > EE traces a circle of radius 15 cm in the XZ plane
 
-<video src="iiwa7/demo_motion_vcircle.mp4" controls muted playsinline preload="metadata" width="720"></video>
+<video src="https://raw.githubusercontent.com/liuskywalkerjskd/iiwa7-mujoco/main/media/videos/demo_motion_vcircle.mp4" controls muted playsinline preload="metadata" width="720"></video>
 
 ### 3. 垂直矩形 / Vertical rectangle
 
 > mean 9.13 mm / max 18.61 mm — XZ 平面 30×20 cm，2 圈  
 > EE traces a 30×20 cm rectangle in the XZ plane, 2 loops
 
-<video src="iiwa7/demo_motion_vrect.mp4" controls muted playsinline preload="metadata" width="720"></video>
+<video src="https://raw.githubusercontent.com/liuskywalkerjskd/iiwa7-mujoco/main/media/videos/demo_motion_vrect.mp4" controls muted playsinline preload="metadata" width="720"></video>
 
 ### 4. 8 字形 / Figure-8 (Lissajous)
 
 > mean 8.81 mm / max 26.39 mm — XY 水平面 Lissajous：`x=cx+A cos t, y=cy+B sin 2t`  
 > Horizontal XY Lissajous figure-8
 
-<video src="iiwa7/demo_motion_figure8.mp4" controls muted playsinline preload="metadata" width="720"></video>
+<video src="https://raw.githubusercontent.com/liuskywalkerjskd/iiwa7-mujoco/main/media/videos/demo_motion_figure8.mp4" controls muted playsinline preload="metadata" width="720"></video>
 
 ### 5. 螺旋上升 / Conical spiral
 
 > mean 9.46 mm / max 19.27 mm — 半径 0.20→0.05 m，Z 0.35→0.75 m，3 圈  
 > Radius shrinks 0.20→0.05 m while Z rises 0.35→0.75 m, 3 turns
 
-<video src="iiwa7/demo_motion_spiral.mp4" controls muted playsinline preload="metadata" width="720"></video>
+<video src="https://raw.githubusercontent.com/liuskywalkerjskd/iiwa7-mujoco/main/media/videos/demo_motion_spiral.mp4" controls muted playsinline preload="metadata" width="720"></video>
 
 ### 6. 避障 / Obstacle avoidance
 
 > mean 7.12 mm / max 14.78 mm — 绕过红色垂直障碍柱，Z 方向飞越  
 > Arcs over a red vertical pillar, lifting to Z=0.85 for safety margin
 
-<video src="iiwa7/demo_motion_obstacle.mp4" controls muted playsinline preload="metadata" width="720"></video>
+<video src="https://raw.githubusercontent.com/liuskywalkerjskd/iiwa7-mujoco/main/media/videos/demo_motion_obstacle.mp4" controls muted playsinline preload="metadata" width="720"></video>
 
 ### 7. 6-DOF 方形（末端锁定朝下） / 6-DOF square (tool pointing down)
 
@@ -303,7 +305,7 @@ H.264 MP4, 720×540 @ 30 fps, and embedded below for inline playback on GitHub.
 > Horizontal 20×20 cm square with end-effector orientation locked to point downward  
 > Uses extended 6-DOF damped-least-squares IK (3×7 pos + 3×7 rot Jacobians, quaternion error)
 
-<video src="iiwa7/demo_motion_sq6dof.mp4" controls muted playsinline preload="metadata" width="720"></video>
+<video src="https://raw.githubusercontent.com/liuskywalkerjskd/iiwa7-mujoco/main/media/videos/demo_motion_sq6dof.mp4" controls muted playsinline preload="metadata" width="720"></video>
 
 ---
 

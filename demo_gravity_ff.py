@@ -18,7 +18,7 @@ Equation of motion after compensation:
 Compares against iiwa7_tuned_square_scene.xml (same PD gains, no FF).
 
 Outputs:
-  iiwa7/demo_square_gravity_ff.mp4
+  media/videos/demo_square_gravity_ff.mp4
   TUNING_REPORT.md (appended)
 """
 from __future__ import annotations
@@ -36,7 +36,7 @@ import imageio.v2 as imageio
 HERE = Path(__file__).resolve().parent
 TUNED_SCENE = HERE / "iiwa7" / "iiwa7_tuned_square_scene.xml"
 REPORT = HERE / "TUNING_REPORT.md"
-OUT_MP4 = HERE / "iiwa7" / "demo_square_gravity_ff.mp4"
+OUT_MP4 = HERE / "media" / "videos" / "demo_square_gravity_ff.mp4"
 
 WIDTH, HEIGHT = 720, 540
 FPS = 30
@@ -173,6 +173,7 @@ def main():
     mean, p95, mx = float(errs.mean()), float(np.percentile(errs, 95)), float(errs.max())
     print(f"tracking error along reference: mean={mean:.2f} mm  p95={p95:.2f} mm  max={mx:.2f} mm  ({len(errs)} frames)")
 
+    OUT_MP4.parent.mkdir(parents=True, exist_ok=True)
     imageio.mimwrite(str(OUT_MP4), frames, fps=FPS, quality=7, macro_block_size=1)
     print(f"wrote {OUT_MP4} ({OUT_MP4.stat().st_size/1024:.1f} KiB)")
 

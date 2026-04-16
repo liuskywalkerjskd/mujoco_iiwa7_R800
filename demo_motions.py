@@ -330,6 +330,7 @@ def run(scene_path: Path, wp, t_total: float, out_mp4: Path,
     mean, p95, mx = float(errs.mean()), float(np.percentile(errs, 95)), float(errs.max())
     print(f"tracking: mean={mean:.2f} mm  p95={p95:.2f} mm  max={mx:.2f} mm  ({len(errs)} frames)")
 
+    out_mp4.parent.mkdir(parents=True, exist_ok=True)
     imageio.mimwrite(str(out_mp4), frames, fps=FPS, quality=7, macro_block_size=1)
     print(f"wrote {out_mp4} ({out_mp4.stat().st_size/1024:.1f} KiB)")
     return mean, p95, mx
@@ -347,7 +348,7 @@ def main():
         draw_polyline(scn, circle_pts, (0, 1, 1, 0.9), radius=0.004)
 
     m1, _, x1 = run(CLEAN_SCENE, wp_c, tt_c,
-                     HERE / "iiwa7" / "demo_motion_vcircle.mp4",
+                     HERE / "media" / "videos" / "demo_motion_vcircle.mp4",
                      overlay_builder=overlay_circle,
                      label="vertical circle")
 
@@ -360,14 +361,14 @@ def main():
         draw_polyline(scn, rect_corners, (0, 1, 1, 0.9), radius=0.005)
 
     m2, _, x2 = run(CLEAN_SCENE, wp_r, tt_r,
-                     HERE / "iiwa7" / "demo_motion_vrect.mp4",
+                     HERE / "media" / "videos" / "demo_motion_vrect.mp4",
                      overlay_builder=overlay_rect,
                      label="vertical rectangle")
 
     # --- Motion 3: pick and place ---
     wp_p, tt_p = motion_pick_place()
     m3, _, x3 = run(PICKPLACE_SCENE, wp_p, tt_p,
-                     HERE / "iiwa7" / "demo_motion_pickplace.mp4",
+                     HERE / "media" / "videos" / "demo_motion_pickplace.mp4",
                      overlay_builder=None,
                      has_mocap_cube=True,
                      label="pick and place")

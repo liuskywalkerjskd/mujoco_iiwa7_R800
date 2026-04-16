@@ -34,7 +34,7 @@ from scipy.interpolate import CubicSpline
 HERE = Path(__file__).resolve().parent
 TUNED_SCENE = HERE / "iiwa7" / "iiwa7_tuned_square_scene.xml"
 REPORT = HERE / "TUNING_REPORT.md"
-OUT_MP4 = HERE / "iiwa7" / "demo_square_current_state_ff.mp4"
+OUT_MP4 = HERE / "media" / "videos" / "demo_square_current_state_ff.mp4"
 
 WIDTH, HEIGHT = 720, 540
 FPS = 30
@@ -197,6 +197,7 @@ def main():
     print("FF peak torque per joint (N·m): "
           + ", ".join(f"J{i+1}={v:.1f}" for i, v in enumerate(ff_peaks)))
 
+    OUT_MP4.parent.mkdir(parents=True, exist_ok=True)
     imageio.mimwrite(str(OUT_MP4), frames, fps=FPS, quality=7, macro_block_size=1)
     print(f"wrote {OUT_MP4} ({OUT_MP4.stat().st_size/1024:.1f} KiB)")
 
