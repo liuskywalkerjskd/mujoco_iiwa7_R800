@@ -118,7 +118,7 @@ def main() -> int:
 
     home_id = model.key("home").id
     ready_id = model.key("ready").id
-    home_q = model.key_qpos[home_id].copy()
+    home_q = model.key_qpos[ready_id].copy()  # start at ready (no home ramp)
     ready_q = model.key_qpos[ready_id].copy()
 
     ee_body = model.body("iiwa_link_7").id

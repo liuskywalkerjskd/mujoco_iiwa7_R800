@@ -291,7 +291,7 @@ def motion_square_6dof():
 
 def precompute_q(model, wps, t_total):
     ee_body = model.body("iiwa_link_7").id
-    home_q  = model.key_qpos[model.key("home").id].copy()
+    home_q = model.key_qpos[model.key("ready").id].copy()  # start at ready (no home ramp)
     ready_q = model.key_qpos[model.key("ready").id].copy()
 
     n_frames = int(t_total * FPS)
@@ -380,7 +380,7 @@ def run(scene_path: Path, wps, t_total: float, out_mp4: Path,
     splines_qd  = [sp.derivative(1) for sp in splines_q]
     splines_qdd = [sp.derivative(2) for sp in splines_q]
 
-    mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
     ctrl = IiwaEEController(model, data, mode="full_id_ff_current", kp_tsk=KP_TSK, kd_tsk=KD_TSK)
     ctrl = IiwaEEController(model, data, mode="full_id_ff_current", kp_tsk=KP_TSK, kd_tsk=KD_TSK)
     renderer = mujoco.Renderer(model, height=HEIGHT, width=WIDTH)

@@ -87,7 +87,7 @@ def precompute_q_at_frames(model):
     """Return (n_frames, nq) array of joint targets at frame rate."""
     ee = model.body("iiwa_link_7").id
     tool = np.array([0.0, 0.0, 0.05])
-    home_q = model.key_qpos[model.key("home").id].copy()
+    home_q = model.key_qpos[model.key("ready").id].copy()  # start at ready (no home ramp)
     ready_q = model.key_qpos[model.key("ready").id].copy()
 
     n = int(TOTAL_S * FPS)
@@ -152,7 +152,7 @@ def main():
         qdd = np.array([sp(t)   for sp in splines_qdd])
         return q, qd, qdd
 
-    mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
     ctrl = IiwaEEController(model, data, mode="full_id_ff_ref")
     renderer = mujoco.Renderer(model, height=HEIGHT, width=WIDTH)
     cam = mujoco.MjvCamera()

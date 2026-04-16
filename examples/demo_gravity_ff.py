@@ -88,7 +88,7 @@ def ik_dls(model, data, body_id, target, q0, tool_offset,
 def precompute(model):
     ee = model.body("iiwa_link_7").id
     tool = np.array([0.0, 0.0, 0.05])
-    home_q = model.key_qpos[model.key("home").id].copy()
+    home_q = model.key_qpos[model.key("ready").id].copy()  # start at ready (no home ramp)
     ready_q = model.key_qpos[model.key("ready").id].copy()
 
     n = int(TOTAL_S * FPS)
@@ -153,7 +153,7 @@ def main():
     print(f"  FF peak torque per joint (Nm): "
           + ", ".join(f"J{i+1}={v:.1f}" for i, v in enumerate(ff_peak)))
 
-    mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
     ctrl = IiwaEEController(model, data, mode="gravity_ff")
     renderer = mujoco.Renderer(model, height=HEIGHT, width=WIDTH)
     cam = mujoco.MjvCamera()

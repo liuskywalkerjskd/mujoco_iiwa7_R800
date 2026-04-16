@@ -184,7 +184,7 @@ def precompute_joint_targets(model, wp, t_total):
     """Given waypoints list of (t, target_ee or None for key, grab, tag),
     solve IK per frame and return (times, q_frames, ref_ee, grab_flags)."""
     ee_body = model.body("iiwa_link_7").id
-    home_q  = model.key_qpos[model.key("home").id].copy()
+    home_q = model.key_qpos[model.key("ready").id].copy()  # start at ready (no home ramp)
     ready_q = model.key_qpos[model.key("ready").id].copy()
 
     n_frames = int(t_total * FPS)
@@ -275,7 +275,7 @@ def run(scene_path: Path, wp, t_total: float, out_mp4: Path,
     splines_qd  = [sp.derivative(1) for sp in splines_q]
     splines_qdd = [sp.derivative(2) for sp in splines_q]
 
-    mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
     ctrl = IiwaEEController(model, data, mode="full_id_ff_current", kp_tsk=KP_TSK, kd_tsk=KD_TSK)
     renderer = mujoco.Renderer(model, height=HEIGHT, width=WIDTH)
     cam = mujoco.MjvCamera()

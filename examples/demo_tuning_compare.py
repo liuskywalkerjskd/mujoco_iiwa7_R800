@@ -77,7 +77,7 @@ def precompute_trajectory(model):
     ref_path_or_None per frame)."""
     ee_body = model.body("iiwa_link_7").id
     tool_offset = np.array([0.0, 0.0, 0.05])
-    home_q = model.key_qpos[model.key("home").id].copy()
+    home_q = model.key_qpos[model.key("ready").id].copy()  # start at ready (no home ramp)
     ready_q = model.key_qpos[model.key("ready").id].copy()
 
     n_frames = int(TOTAL_S * FPS)
@@ -132,7 +132,7 @@ def run_actuated(scene_path: Path, label: str, out_mp4: Path):
     data = mujoco.MjData(model)
     joint_target, ref_path, ee_body, tool_offset = precompute_trajectory(model)
 
-    mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
     # pd_only for legacy; unified API for consistency
     ctrl = IiwaEEController(model, data, mode="pd_only")
     renderer = mujoco.Renderer(model, height=HEIGHT, width=WIDTH)
