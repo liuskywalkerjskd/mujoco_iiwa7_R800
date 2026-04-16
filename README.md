@@ -21,31 +21,31 @@
 
 ```
 iiwa7-mujoco/
-├── README.md                          本文件（双语）
-├── TUNING_REPORT.md                   精调参数对比表 + 跟踪误差基准
-├── convert_iiwa7_to_mjcf.py           URDF → MJCF 可复现脚本（需原始 iiwa_stack 源）
-├── demo_record.py                     基础 passive + 正弦扫动 demo
-├── demo_square.py                     IK 方形轨迹 (kinematic playback)
-├── demo_tuning_compare.py             legacy 与 tuned 控制器对比
-├── demo_gravity_ff.py                 重力前馈
-├── demo_full_id_ff.py                 参考态完整逆动力学前馈
-├── demo_current_state_ff.py           当前态 ID FF + task-PD (最佳控制器)
-├── demo_motions.py                    3 个动作：水平方形/圆/抓取
-├── examples/demo_motions_v2.py                 5 个动作：8字/螺旋/避障/堆叠/6-DOF
-├── iiwa7/                             MJCF 模型文件（仅 XML/URDF）
-│   ├── iiwa7.urdf                       剥 ROS 标签的纯 URDF（中间产物）
-│   ├── iiwa7.xml                        基础 MJCF（URDF 自动转换）
-│   ├── iiwa7_tuned.xml                  menagerie 风格精调模型 ⭐
-│   ├── iiwa7_scene.xml                  基础场景（robot + ground + actuator）
-│   ├── iiwa7_clean_scene.xml            精调场景
-│   ├── iiwa7_square_scene.xml           方形轨迹参考场景
-│   ├── iiwa7_tuned_square_scene.xml     精调版方形场景
-│   ├── iiwa7_obstacle_scene.xml         避障场景（红柱）
-│   ├── iiwa7_stack_scene.xml            双 cube 堆叠场景
-│   └── iiwa7_pickplace_scene.xml        抓放场景
-├── media/videos/                      demo 视频（MP4）
-│   └── *.mp4                            所有录制视频
-└── meshes/iiwa7/                      visual + collision STL mesh
+├── README.md                            本文件（双语）
+├── TUNING_REPORT.md                     精调参数对比表 + 跟踪误差基准
+├── iiwa7_mjcf/                          即插即用 MJCF 模型 ⭐
+│   ├── iiwa7.xml                          基础 MJCF（自动转自 URDF）
+│   ├── iiwa7_tuned.xml                    menagerie 风格精调模型
+│   ├── iiwa7.urdf                         剥 ROS 标签的纯 URDF（中间产物）
+│   └── meshes/
+│       ├── collision/link_*.stl             碰撞 mesh（iiwa_stack 原版）
+│       └── visual/link_*.obj                视觉 mesh（按 orange/grey 切分）
+├── examples/                            示例 demo + scene
+│   ├── demo_record.py                     基础 passive + 正弦扫动
+│   ├── demo_square.py                     IK 方形轨迹（kinematic playback）
+│   ├── demo_tuning_compare.py             legacy vs tuned 控制器 A/B 对比
+│   ├── demo_gravity_ff.py                 重力前馈
+│   ├── demo_full_id_ff.py                 参考态完整逆动力学前馈
+│   ├── demo_current_state_ff.py           当前态 ID FF + task-PD（最佳控制器）
+│   ├── demo_motions.py                    3 动作：水平方形 / 圆 / 抓取
+│   ├── demo_motions_v2.py                 5 动作：8 字 / 螺旋 / 避障 / 堆叠 / 6-DOF
+│   └── scenes/
+│       └── iiwa7_*_scene.xml                7 个场景包装（include iiwa7_mjcf 下的 XML）
+├── tools/
+│   └── convert_iiwa7_to_mjcf.py         URDF → MJCF 可复现脚本
+└── media/
+    ├── videos/                          demo 视频（MP4）
+    └── thumbnails/                      缩略图（README showcase 用）
 ```
 
 ### 快速上手
@@ -141,31 +141,31 @@ Tuning follows the engineering conventions of [`mujoco_menagerie/kuka_iiwa_14`](
 
 ```
 iiwa7-mujoco/
-├── README.md                          this file (bilingual)
-├── TUNING_REPORT.md                   parameter-diff table + tracking benchmarks
-├── convert_iiwa7_to_mjcf.py           URDF → MJCF pipeline (needs iiwa_stack source)
-├── demo_record.py                     basic passive + sinusoidal sweep
-├── demo_square.py                     IK square trajectory (kinematic playback)
-├── demo_tuning_compare.py             legacy vs tuned controller A/B
-├── demo_gravity_ff.py                 gravity feedforward
-├── demo_full_id_ff.py                 reference-state full inverse-dynamics FF
-├── demo_current_state_ff.py           current-state ID FF + task-PD (best)
-├── demo_motions.py                    3 motions: hsquare / vcircle / pickplace
-├── examples/demo_motions_v2.py                 5 motions: fig8 / spiral / obstacle / stack / 6-DOF
-├── iiwa7/                             MJCF assets (XML/URDF only)
-│   ├── iiwa7.urdf                       cleaned pure URDF (intermediate)
-│   ├── iiwa7.xml                        base MJCF (auto-converted)
-│   ├── iiwa7_tuned.xml                  menagerie-style tuned model ⭐
-│   ├── iiwa7_scene.xml                  basic scene (robot + ground + actuator)
-│   ├── iiwa7_clean_scene.xml            tuned scene
-│   ├── iiwa7_square_scene.xml           reference square overlay scene
-│   ├── iiwa7_tuned_square_scene.xml     tuned + square overlay
-│   ├── iiwa7_obstacle_scene.xml         pillar obstacle scene
-│   ├── iiwa7_stack_scene.xml            two-cube stacking scene
-│   └── iiwa7_pickplace_scene.xml        pick-and-place scene
-├── media/videos/                      demo videos (MP4)
-│   └── *.mp4                            all rendered clips
-└── meshes/iiwa7/                      visual + collision STL
+├── README.md                            this file (bilingual)
+├── TUNING_REPORT.md                     parameter-diff table + tracking benchmarks
+├── iiwa7_mjcf/                          plug-and-play MJCF model ⭐
+│   ├── iiwa7.xml                          base MJCF (auto-converted from URDF)
+│   ├── iiwa7_tuned.xml                    menagerie-style tuned model
+│   ├── iiwa7.urdf                         cleaned URDF (intermediate product)
+│   └── meshes/
+│       ├── collision/link_*.stl             iiwa_stack collision STLs
+│       └── visual/link_*.obj                iiwa7 STL split into orange/grey OBJs
+├── examples/                            demo scripts + scene wrappers
+│   ├── demo_record.py                     basic passive + sinusoidal sweep
+│   ├── demo_square.py                     IK square trajectory (kinematic playback)
+│   ├── demo_tuning_compare.py             legacy vs tuned controller A/B
+│   ├── demo_gravity_ff.py                 gravity feedforward
+│   ├── demo_full_id_ff.py                 reference-state full inverse-dynamics FF
+│   ├── demo_current_state_ff.py           current-state ID FF + task-PD (best)
+│   ├── demo_motions.py                    3 motions: hsquare / vcircle / pickplace
+│   ├── demo_motions_v2.py                 5 motions: fig8 / spiral / obstacle / stack / 6-DOF
+│   └── scenes/
+│       └── iiwa7_*_scene.xml                7 scene wrappers (include XMLs from iiwa7_mjcf)
+├── tools/
+│   └── convert_iiwa7_to_mjcf.py         URDF -> MJCF pipeline (one-time utility)
+└── media/
+    ├── videos/                          demo videos (MP4)
+    └── thumbnails/                      showcase thumbnails
 ```
 
 ### Quick start
