@@ -49,6 +49,7 @@ class IiwaEEController:
         data: mujoco.MjData,
         mode: str = "full_id_ff_current",
         ee_body_name: str = "iiwa_link_7",
+        base_body_name: str = "iiwa_link_0",
         tool_offset: np.ndarray = DEFAULT_TOOL_OFFSET,
         kp_tsk: float = 400.0,
         kd_tsk: float = 40.0,
@@ -62,6 +63,7 @@ class IiwaEEController:
         self.mode = mode
         self.model = model
         self.ee_body_id = model.body(ee_body_name).id
+        self.base_body_id = model.body(base_body_name).id
         self.tool_offset = np.asarray(tool_offset, dtype=float).copy()
 
         self.kp_tsk = float(kp_tsk)
@@ -75,6 +77,13 @@ class IiwaEEController:
         # scratch MjData for IK and inverse-dynamics (never disturbs live data)
         self._ik_data = mujoco.MjData(model)
         self._id_data = mujoco.MjData(model)
+
+        # Cache base-frame pose in the world (assumed static after init).
+        # Ensures set_ee_pose works whether the base is at the origin or
+        # mounted somewhere else in the scene.
+        mujoco.mj_forward(model, data)
+        self._base_pos_world = data.xpos[self.base_body_id].copy()
+        self._base_quat_world = data.xquat[self.base_body_id].copy()
 
         nq = model.nq
         self._q_target = data.qpos[:nq].copy()
@@ -102,9 +111,10 @@ class IiwaEEController:
         """Solve IK and update the internal joint target.
 
         Args:
-            pos:  desired EE position, shape (3,).
-            quat: optional desired EE orientation (w, x, y, z). If None,
-                  only position is constrained (3-DOF IK).
+            pos:  desired EE position in WORLD frame, shape (3,).
+            quat: optional desired EE orientation in MuJoCo convention
+                  (w, x, y, z), shape (4,). If None, only position is
+                  constrained (3-DOF IK).
 
         Returns:
             residual: final pose error norm at IK convergence.
@@ -114,6 +124,40 @@ class IiwaEEController:
             return self._ik_pos_only(pos)
         quat = np.asarray(quat, dtype=float).reshape(4)
         return self._ik_6dof(pos, quat)
+
+    def set_ee_pose(self, pose7: np.ndarray) -> float:
+        """High-level pose API matching the common robotics convention:
+
+            pose7 = [x, y, z, qx, qy, qz, qw]
+
+        where:
+          - (x, y, z) is the end-effector origin expressed in the BASE
+            frame (iiwa_link_0) in meters,
+          - (qx, qy, qz, qw) is the end-effector orientation as a
+            quaternion in xyzw order (ROS / Eigen / scipy convention).
+
+        Internally the pose is transformed into the world frame (using
+        the base body's cached world pose) and the quaternion is
+        re-ordered to MuJoCo's wxyz convention before being handed to the
+        IK solver.
+
+        Returns:
+            residual: final pose error norm at IK convergence.
+        """
+        pose7 = np.asarray(pose7, dtype=float).reshape(7)
+        pos_base = pose7[:3]
+        qx, qy, qz, qw = pose7[3:]
+        quat_base_wxyz = np.array([qw, qx, qy, qz])
+
+        # World = base * local
+        pos_world = np.empty(3)
+        mujoco.mju_rotVecQuat(pos_world, pos_base, self._base_quat_world)
+        pos_world += self._base_pos_world
+
+        quat_world_wxyz = np.empty(4)
+        mujoco.mju_mulQuat(quat_world_wxyz, self._base_quat_world, quat_base_wxyz)
+
+        return self.set_ee_target(pos=pos_world, quat=quat_world_wxyz)
 
     def set_joint_target(self, q: np.ndarray) -> None:
         """Directly set the joint-space target (skip IK)."""
