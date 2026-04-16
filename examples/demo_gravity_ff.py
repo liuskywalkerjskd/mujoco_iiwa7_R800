@@ -34,9 +34,9 @@ import mujoco
 import imageio.v2 as imageio
 
 HERE = Path(__file__).resolve().parent
-TUNED_SCENE = HERE / "iiwa7" / "iiwa7_tuned_square_scene.xml"
-REPORT = HERE / "TUNING_REPORT.md"
-OUT_MP4 = HERE / "media" / "videos" / "demo_square_gravity_ff.mp4"
+TUNED_SCENE = HERE / "scenes" / "iiwa7_tuned_square_scene.xml"
+REPORT = HERE.parent / "TUNING_REPORT.md"
+OUT_MP4 = HERE.parent / "media" / "videos" / "demo_square_gravity_ff.mp4"
 
 WIDTH, HEIGHT = 720, 540
 FPS = 30

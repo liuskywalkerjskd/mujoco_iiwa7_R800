@@ -24,8 +24,8 @@ import mujoco
 import imageio.v2 as imageio
 
 HERE = Path(__file__).resolve().parent
-MJCF = HERE / "iiwa7" / "iiwa7_scene.xml"
-OUT = HERE / "media" / "videos" / "demo.mp4"
+MJCF = HERE / "scenes" / "iiwa7_scene.xml"
+OUT = HERE.parent / "media" / "videos" / "demo.mp4"
 
 WIDTH, HEIGHT = 640, 480
 FPS = 30

@@ -2,8 +2,9 @@
   <!-- Clean scene for motion demos that draw their own reference overlay
        at runtime via mjvScene user geoms (see demo_motions.py). -->
 
-  <include file="iiwa7_tuned.xml"/>
+  <include file="../../iiwa7_mjcf/iiwa7_tuned.xml"/>
 
+  <compiler meshdir="../../iiwa7_mjcf/meshes"/>
   <visual>
     <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
     <rgba haze="0.15 0.25 0.35 1"/>

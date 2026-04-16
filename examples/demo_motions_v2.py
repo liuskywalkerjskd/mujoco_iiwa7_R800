@@ -24,10 +24,10 @@ import imageio.v2 as imageio
 from scipy.interpolate import CubicSpline
 
 HERE = Path(__file__).resolve().parent
-CLEAN_SCENE    = HERE / "iiwa7" / "iiwa7_clean_scene.xml"
-OBSTACLE_SCENE = HERE / "iiwa7" / "iiwa7_obstacle_scene.xml"
-STACK_SCENE    = HERE / "iiwa7" / "iiwa7_stack_scene.xml"
-SQUARE_SCENE   = HERE / "iiwa7" / "iiwa7_tuned_square_scene.xml"
+CLEAN_SCENE    = HERE / "scenes" / "iiwa7_clean_scene.xml"
+OBSTACLE_SCENE = HERE / "scenes" / "iiwa7_obstacle_scene.xml"
+STACK_SCENE    = HERE / "scenes" / "iiwa7_stack_scene.xml"
+SQUARE_SCENE   = HERE / "scenes" / "iiwa7_tuned_square_scene.xml"
 
 WIDTH, HEIGHT = 720, 540
 FPS = 30
@@ -449,7 +449,7 @@ def main():
         draw_polyline(scn, pts, (0, 1, 1, 0.9), radius=0.004)
     wps, tt = motion_figure8()
     results["figure8"] = run(CLEAN_SCENE, wps, tt,
-                              HERE/"media" / "videos" / "demo_motion_figure8.mp4",
+                              HERE.parent / "media" / "videos" / "demo_motion_figure8.mp4",
                               overlay_builder=overlay_fig8,
                               camera_cfg={"az":135, "el":-55, "d":1.8, "lookat":[0.5, 0, 0.55]},
                               label="figure-8")
@@ -468,7 +468,7 @@ def main():
         draw_polyline(scn, pts, (1, 0.8, 0.2, 0.9), radius=0.004)
     wps, tt = motion_spiral()
     results["spiral"] = run(CLEAN_SCENE, wps, tt,
-                             HERE/"media" / "videos" / "demo_motion_spiral.mp4",
+                             HERE.parent / "media" / "videos" / "demo_motion_spiral.mp4",
                              overlay_builder=overlay_spiral,
                              camera_cfg={"az":140, "el":-20, "d":2.2, "lookat":[0.5, 0, 0.55]},
                              label="spiral")
@@ -490,7 +490,7 @@ def main():
         draw_polyline(scn, path, (0, 1, 0.4, 0.85), radius=0.004)
     wps, tt = motion_obstacle()
     results["obstacle"] = run(OBSTACLE_SCENE, wps, tt,
-                               HERE/"media" / "videos" / "demo_motion_obstacle.mp4",
+                               HERE.parent / "media" / "videos" / "demo_motion_obstacle.mp4",
                                overlay_builder=overlay_obstacle,
                                camera_cfg={"az":180, "el":-15, "d":2.0, "lookat":[0.5, 0, 0.6]},
                                label="obstacle avoidance")
@@ -505,7 +505,7 @@ def main():
             data.mocap_pos[idb] = ee_now - np.array([0, 0, 0.055])
     wps, tt = motion_stack()
     results["stack"] = run(STACK_SCENE, wps, tt,
-                            HERE/"media" / "videos" / "demo_motion_stack.mp4",
+                            HERE.parent / "media" / "videos" / "demo_motion_stack.mp4",
                             mocap_handler=stack_mocap_handler,
                             camera_cfg={"az":135, "el":-28, "d":2.2, "lookat":[0.5, 0, 0.45]},
                             label="stack 2 cubes")
@@ -519,7 +519,7 @@ def main():
         draw_polyline(scn, corners, (1, 0.4, 1, 0.9), radius=0.005)
     wps, tt = motion_square_6dof()
     results["sq6dof"] = run(CLEAN_SCENE, wps, tt,
-                             HERE/"media" / "videos" / "demo_motion_sq6dof.mp4",
+                             HERE.parent / "media" / "videos" / "demo_motion_sq6dof.mp4",
                              overlay_builder=overlay_sq6dof,
                              camera_cfg={"az":145, "el":-30, "d":2.0, "lookat":[0.5, 0, 0.5]},
                              label="6-DOF square (tool pointing down)")

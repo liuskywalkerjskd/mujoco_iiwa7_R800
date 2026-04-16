@@ -31,8 +31,8 @@ import imageio.v2 as imageio
 from scipy.interpolate import CubicSpline
 
 HERE = Path(__file__).resolve().parent
-CLEAN_SCENE     = HERE / "iiwa7" / "iiwa7_clean_scene.xml"
-PICKPLACE_SCENE = HERE / "iiwa7" / "iiwa7_pickplace_scene.xml"
+CLEAN_SCENE     = HERE / "scenes" / "iiwa7_clean_scene.xml"
+PICKPLACE_SCENE = HERE / "scenes" / "iiwa7_pickplace_scene.xml"
 
 WIDTH, HEIGHT = 720, 540
 FPS = 30
@@ -348,7 +348,7 @@ def main():
         draw_polyline(scn, circle_pts, (0, 1, 1, 0.9), radius=0.004)
 
     m1, _, x1 = run(CLEAN_SCENE, wp_c, tt_c,
-                     HERE / "media" / "videos" / "demo_motion_vcircle.mp4",
+                     HERE.parent / "media" / "videos" / "demo_motion_vcircle.mp4",
                      overlay_builder=overlay_circle,
                      label="vertical circle")
 
@@ -361,14 +361,14 @@ def main():
         draw_polyline(scn, rect_corners, (0, 1, 1, 0.9), radius=0.005)
 
     m2, _, x2 = run(CLEAN_SCENE, wp_r, tt_r,
-                     HERE / "media" / "videos" / "demo_motion_vrect.mp4",
+                     HERE.parent / "media" / "videos" / "demo_motion_vrect.mp4",
                      overlay_builder=overlay_rect,
                      label="vertical rectangle")
 
     # --- Motion 3: pick and place ---
     wp_p, tt_p = motion_pick_place()
     m3, _, x3 = run(PICKPLACE_SCENE, wp_p, tt_p,
-                     HERE / "media" / "videos" / "demo_motion_pickplace.mp4",
+                     HERE.parent / "media" / "videos" / "demo_motion_pickplace.mp4",
                      overlay_builder=None,
                      has_mocap_cube=True,
                      label="pick and place")

@@ -20,7 +20,7 @@
       - joint damping 0.5 from URDF (kept for passive-sim stability)
   -->
 
-  <compiler angle="radian" meshdir="../meshes" autolimits="true"/>
+  <compiler angle="radian" meshdir="meshes" autolimits="true"/>
 
   <option integrator="implicitfast" timestep="0.002"/>
 
@@ -71,27 +71,27 @@
     <material name="iiwa_orange" rgba="1.0 0.423529 0.0392157 1" specular="0.5" shininess="0.25"/>
 
     <!-- Visual meshes: iiwa7 STL split by mesh-surface classification -->
-    <mesh name="link_0_vis"        file="iiwa7_split/link_0.obj"/>
-    <mesh name="link_1_vis"        file="iiwa7_split/link_1.obj"/>
-    <mesh name="link_2_orange_vis" file="iiwa7_split/link_2_orange.obj"/>
-    <mesh name="link_2_grey_vis"   file="iiwa7_split/link_2_grey.obj"/>
-    <mesh name="link_3_vis"        file="iiwa7_split/link_3.obj"/>
-    <mesh name="link_4_orange_vis" file="iiwa7_split/link_4_orange.obj"/>
-    <mesh name="link_4_grey_vis"   file="iiwa7_split/link_4_grey.obj"/>
-    <mesh name="link_5_vis"        file="iiwa7_split/link_5.obj"/>
-    <mesh name="link_6_orange_vis" file="iiwa7_split/link_6_orange.obj"/>
-    <mesh name="link_6_grey_vis"   file="iiwa7_split/link_6_grey.obj"/>
-    <mesh name="link_7_vis"        file="iiwa7_split/link_7.obj"/>
+    <mesh name="link_0_vis"        file="visual/link_0.obj"/>
+    <mesh name="link_1_vis"        file="visual/link_1.obj"/>
+    <mesh name="link_2_orange_vis" file="visual/link_2_orange.obj"/>
+    <mesh name="link_2_grey_vis"   file="visual/link_2_grey.obj"/>
+    <mesh name="link_3_vis"        file="visual/link_3.obj"/>
+    <mesh name="link_4_orange_vis" file="visual/link_4_orange.obj"/>
+    <mesh name="link_4_grey_vis"   file="visual/link_4_grey.obj"/>
+    <mesh name="link_5_vis"        file="visual/link_5.obj"/>
+    <mesh name="link_6_orange_vis" file="visual/link_6_orange.obj"/>
+    <mesh name="link_6_grey_vis"   file="visual/link_6_grey.obj"/>
+    <mesh name="link_7_vis"        file="visual/link_7.obj"/>
 
     <!-- Collision meshes: original iiwa7 STL (unscaled — drives physics) -->
-    <mesh name="link_0_col" file="iiwa7/collision/link_0.stl"/>
-    <mesh name="link_1_col" file="iiwa7/collision/link_1.stl"/>
-    <mesh name="link_2_col" file="iiwa7/collision/link_2.stl"/>
-    <mesh name="link_3_col" file="iiwa7/collision/link_3.stl"/>
-    <mesh name="link_4_col" file="iiwa7/collision/link_4.stl"/>
-    <mesh name="link_5_col" file="iiwa7/collision/link_5.stl"/>
-    <mesh name="link_6_col" file="iiwa7/collision/link_6.stl"/>
-    <mesh name="link_7_col" file="iiwa7/collision/link_7.stl"/>
+    <mesh name="link_0_col" file="collision/link_0.stl"/>
+    <mesh name="link_1_col" file="collision/link_1.stl"/>
+    <mesh name="link_2_col" file="collision/link_2.stl"/>
+    <mesh name="link_3_col" file="collision/link_3.stl"/>
+    <mesh name="link_4_col" file="collision/link_4.stl"/>
+    <mesh name="link_5_col" file="collision/link_5.stl"/>
+    <mesh name="link_6_col" file="collision/link_6.stl"/>
+    <mesh name="link_7_col" file="collision/link_7.stl"/>
   </asset>
 
   <worldbody>

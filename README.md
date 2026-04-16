@@ -31,7 +31,7 @@ iiwa7-mujoco/
 ├── demo_full_id_ff.py                 参考态完整逆动力学前馈
 ├── demo_current_state_ff.py           当前态 ID FF + task-PD (最佳控制器)
 ├── demo_motions.py                    3 个动作：水平方形/圆/抓取
-├── demo_motions_v2.py                 5 个动作：8字/螺旋/避障/堆叠/6-DOF
+├── examples/demo_motions_v2.py                 5 个动作：8字/螺旋/避障/堆叠/6-DOF
 ├── iiwa7/                             MJCF 模型文件（仅 XML/URDF）
 │   ├── iiwa7.urdf                       剥 ROS 标签的纯 URDF（中间产物）
 │   ├── iiwa7.xml                        基础 MJCF（URDF 自动转换）
@@ -55,19 +55,19 @@ iiwa7-mujoco/
 git clone <this repo>
 cd iiwa7-mujoco
 pip install mujoco
-python3 -m mujoco.viewer --mjcf=iiwa7/iiwa7_tuned_square_scene.xml
+python3 -m mujoco.viewer --mjcf=examples/scenes/iiwa7_tuned_square_scene.xml
 ```
 
 **无头服务器（录视频）**：
 ```bash
 pip install mujoco scipy imageio imageio-ffmpeg
-MUJOCO_GL=egl python3 demo_motions_v2.py
+MUJOCO_GL=egl python3 examples/demo_motions_v2.py
 ```
 
 **最简 Python API**：
 ```python
 import mujoco, numpy as np
-m = mujoco.MjModel.from_xml_path("iiwa7/iiwa7_tuned.xml")
+m = mujoco.MjModel.from_xml_path("iiwa7_mjcf/iiwa7_tuned.xml")
 d = mujoco.MjData(m)
 mujoco.mj_resetDataKeyframe(m, d, m.key("ready").id)
 d.ctrl[:] = np.array([0, 0.5, 0, -1.2, 0, 0.8, 0])
@@ -151,7 +151,7 @@ iiwa7-mujoco/
 ├── demo_full_id_ff.py                 reference-state full inverse-dynamics FF
 ├── demo_current_state_ff.py           current-state ID FF + task-PD (best)
 ├── demo_motions.py                    3 motions: hsquare / vcircle / pickplace
-├── demo_motions_v2.py                 5 motions: fig8 / spiral / obstacle / stack / 6-DOF
+├── examples/demo_motions_v2.py                 5 motions: fig8 / spiral / obstacle / stack / 6-DOF
 ├── iiwa7/                             MJCF assets (XML/URDF only)
 │   ├── iiwa7.urdf                       cleaned pure URDF (intermediate)
 │   ├── iiwa7.xml                        base MJCF (auto-converted)
@@ -175,19 +175,19 @@ iiwa7-mujoco/
 git clone <this repo>
 cd iiwa7-mujoco
 pip install mujoco
-python3 -m mujoco.viewer --mjcf=iiwa7/iiwa7_tuned_square_scene.xml
+python3 -m mujoco.viewer --mjcf=examples/scenes/iiwa7_tuned_square_scene.xml
 ```
 
 **Headless server (record videos)**:
 ```bash
 pip install mujoco scipy imageio imageio-ffmpeg
-MUJOCO_GL=egl python3 demo_motions_v2.py
+MUJOCO_GL=egl python3 examples/demo_motions_v2.py
 ```
 
 **Minimal Python API**:
 ```python
 import mujoco, numpy as np
-m = mujoco.MjModel.from_xml_path("iiwa7/iiwa7_tuned.xml")
+m = mujoco.MjModel.from_xml_path("iiwa7_mjcf/iiwa7_tuned.xml")
 d = mujoco.MjData(m)
 mujoco.mj_resetDataKeyframe(m, d, m.key("ready").id)
 d.ctrl[:] = np.array([0, 0.5, 0, -1.2, 0, 0.8, 0])

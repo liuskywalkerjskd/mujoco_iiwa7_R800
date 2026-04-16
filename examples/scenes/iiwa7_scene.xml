@@ -18,8 +18,9 @@
     kp values are conservative for first-touch use; raise once tuned.
   -->
 
-  <include file="iiwa7.xml"/>
+  <include file="../../iiwa7_mjcf/iiwa7.xml"/>
 
+  <compiler meshdir="../../iiwa7_mjcf/meshes"/>
   <option integrator="implicitfast" timestep="0.002"/>
 
   <visual>

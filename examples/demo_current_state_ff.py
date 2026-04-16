@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""Full inverse-dynamics feedforward — targets <5 mm EE tracking error.
+"""Current-state inverse-dynamics FF — targets <5 mm EE tracking.
 
-Upgrade over demo_gravity_ff.py:
-  - Frame-rate IK targets are fitted with a cubic spline per joint, so the
-    reference is C^2 (continuous acceleration) rather than stepped at 30 Hz.
-  - At every sim step (500 Hz), the spline is evaluated for q_d, qd_d, qdd_d.
-  - mj_inverse is called on a scratch MjData with those values, giving
-    tau_ff = M(q_d) qdd_d + C(q_d, qd_d) qd_d + G(q_d) - F_passive(q_d, qd_d).
-  - tau_ff is injected via data.qfrc_applied; the PD actuator keeps ctrl=q_d
-    so it still rejects residual model error.
+Upgrade over demo_full_id_ff.py:
+  - FF is evaluated at CURRENT state (data.qpos, data.qvel) instead of the
+    reference state (q_d, qd_d). The commanded acceleration stays at qdd_d
+    from the cubic spline, so gravity and Coriolis are cancelled exactly at
+    where the arm actually is, not at where the planner wishes it were.
+  - Optional task-space PD fold-in: qdd_cmd = qdd_d + Kp_tsk*(q_d-q) +
+    Kd_tsk*(qd_d-qd). Off by default; turn on via USE_TASK_PD=True if the
+    pure-state FF still shows drift.
 
-Expected: gravity + Coriolis + inertial terms all compensated, residual
-error dominated by actuator force-range saturation, mesh-approximation
-inertia mismatch, and integration error.
+Equation of motion after injection:
+  qfrc_applied = M(q) qdd_cmd + C(q, qvel) qvel + G(q) - passive(q, qvel)
+  -> M qddot = qfrc_actuator + M qdd_cmd + qfrc_constraint
+  -> qddot   = qdd_cmd + M^-1 qfrc_actuator  (constraint-free)
 
-Outputs:
-  media/videos/demo_square_full_id_ff.mp4
-  TUNING_REPORT.md  (appended)
+The actuator PD (kp=2000 kd=200, ctrl=q_d) still closes residual tracking
+error; ID FF now receives the correct model evaluation at the true state.
 """
 from __future__ import annotations
 
@@ -32,9 +32,9 @@ import imageio.v2 as imageio
 from scipy.interpolate import CubicSpline
 
 HERE = Path(__file__).resolve().parent
-TUNED_SCENE = HERE / "iiwa7" / "iiwa7_tuned_square_scene.xml"
-REPORT = HERE / "TUNING_REPORT.md"
-OUT_MP4 = HERE / "media" / "videos" / "demo_square_full_id_ff.mp4"
+TUNED_SCENE = HERE / "scenes" / "iiwa7_tuned_square_scene.xml"
+REPORT = HERE.parent / "TUNING_REPORT.md"
+OUT_MP4 = HERE.parent / "media" / "videos" / "demo_square_current_state_ff.mp4"
 
 WIDTH, HEIGHT = 720, 540
 FPS = 30
@@ -53,6 +53,11 @@ N_LOOPS          = 2
 T_RETURN         = 2.5
 TOTAL_S = T_HOME_READY + T_READY_APPROACH + T_EDGE * 4 * N_LOOPS + T_RETURN
 
+# Optional task-space PD fold-in (qdd_cmd = qdd_d + Kp*(q_d - q) + Kd*(qd_d - qd))
+USE_TASK_PD = True
+KP_TSK = 400.0
+KD_TSK = 40.0
+
 
 def smoothstep(t): t = max(0.0, min(1.0, t)); return t*t*(3-2*t)
 
@@ -66,8 +71,7 @@ def ik_dls(model, data, body_id, target, q0, tool_offset,
         err = target - xpos
         if np.linalg.norm(err) < tol:
             return data.qpos.copy()
-        jp = np.zeros((3, model.nv))
-        jr = np.zeros((3, model.nv))
+        jp = np.zeros((3, model.nv)); jr = np.zeros((3, model.nv))
         mujoco.mj_jacBody(model, data, jp, jr, body_id)
         dq = jp.T @ np.linalg.solve(jp @ jp.T + damping**2 * np.eye(3), err)
         data.qpos[:] = data.qpos + step * dq
@@ -79,30 +83,26 @@ def ik_dls(model, data, body_id, target, q0, tool_offset,
 
 
 def precompute_q_at_frames(model):
-    """Return (n_frames, nq) array of joint targets at frame rate."""
     ee = model.body("iiwa_link_7").id
     tool = np.array([0.0, 0.0, 0.05])
-    home_q = model.key_qpos[model.key("home").id].copy()
+    home_q  = model.key_qpos[model.key("home").id].copy()
     ready_q = model.key_qpos[model.key("ready").id].copy()
 
     n = int(TOTAL_S * FPS)
     jt = np.zeros((n, model.nq))
     rp = [None] * n
-    t_ready_end    = T_HOME_READY
-    t_approach_end = t_ready_end + T_READY_APPROACH
-    t_loop         = t_approach_end
-    loop_dur       = T_EDGE * 4 * N_LOOPS
-
+    t1 = T_HOME_READY; t2 = t1 + T_READY_APPROACH; t3 = t2
+    loop_dur = T_EDGE * 4 * N_LOOPS
     ik_d = mujoco.MjData(model)
     q_prev = ready_q.copy()
 
     for f in range(n):
         t = f / FPS
-        if t < t_ready_end:
+        if t < t1:
             a = smoothstep(t / T_HOME_READY)
             jt[f] = home_q + a * (ready_q - home_q)
-        elif t < t_approach_end:
-            a = smoothstep((t - t_ready_end) / T_READY_APPROACH)
+        elif t < t2:
+            a = smoothstep((t - t1) / T_READY_APPROACH)
             ik_d.qpos[:] = ready_q
             mujoco.mj_forward(model, ik_d)
             p0 = ik_d.xpos[ee] + ik_d.xmat[ee].reshape(3,3) @ tool
@@ -110,7 +110,7 @@ def precompute_q_at_frames(model):
             q = ik_dls(model, ik_d, ee, target, q_prev, tool)
             jt[f] = q; rp[f] = target; q_prev = q
         else:
-            tau = t - t_loop
+            tau = t - t3
             if tau < loop_dur:
                 et = tau / T_EDGE
                 idx = int(et) % 4
@@ -121,7 +121,6 @@ def precompute_q_at_frames(model):
             else:
                 a = smoothstep((tau - loop_dur) / T_RETURN)
                 jt[f] = q_prev*(1-a) + ready_q*a
-
     return jt, rp, ee, tool
 
 
@@ -136,17 +135,15 @@ def main():
     n_frames = q_frames.shape[0]
     t_frames = np.arange(n_frames) / FPS
 
-    print("fitting cubic splines per joint over trajectory...")
-    splines_q = [CubicSpline(t_frames, q_frames[:, j], bc_type="clamped") for j in range(model.nq)]
-
-    # derivative splines (evaluate via CubicSpline.derivative)
+    print("fitting cubic splines (clamped BC) per joint...")
+    splines_q   = [CubicSpline(t_frames, q_frames[:, j], bc_type="clamped") for j in range(model.nq)]
     splines_qd  = [sp.derivative(1) for sp in splines_q]
     splines_qdd = [sp.derivative(2) for sp in splines_q]
 
     def eval_ref(t: float):
-        q   = np.array([sp(t)   for sp in splines_q])
-        qd  = np.array([sp(t)   for sp in splines_qd])
-        qdd = np.array([sp(t)   for sp in splines_qdd])
+        q   = np.array([sp(t) for sp in splines_q])
+        qd  = np.array([sp(t) for sp in splines_qd])
+        qdd = np.array([sp(t) for sp in splines_qdd])
         return q, qd, qdd
 
     mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
@@ -157,24 +154,26 @@ def main():
 
     dt = model.opt.timestep
     sim_steps_per_frame = max(1, int(round(1.0/FPS / dt)))
-    total_sim_steps = n_frames * sim_steps_per_frame
-    print(f"running sim + render ({n_frames} frames, {sim_steps_per_frame} "
-          f"sim steps/frame, dt={dt}, total {total_sim_steps} sim steps)...")
+    print(f"running sim+render ({n_frames} frames, {sim_steps_per_frame} steps/frame, "
+          f"USE_TASK_PD={USE_TASK_PD} Kp_tsk={KP_TSK} Kd_tsk={KD_TSK})")
 
     ff_peaks = np.zeros(model.nv)
-    frames = []
-    errs = []
+    frames, errs = [], []
 
     for f in range(n_frames):
-        # render-frame boundary: run sim_steps_per_frame sim steps
         for s in range(sim_steps_per_frame):
             t_sim = f / FPS + s * dt
             q_d, qd_d, qdd_d = eval_ref(t_sim)
 
-            # full inverse dynamics at reference state
-            scratch.qpos[:] = q_d
-            scratch.qvel[:] = qd_d
-            scratch.qacc[:] = qdd_d
+            # current-state inverse dynamics: evaluate M, C, G at (q_actual, qd_actual)
+            scratch.qpos[:] = data.qpos[:]
+            scratch.qvel[:] = data.qvel[:]
+            if USE_TASK_PD:
+                qdd_cmd = qdd_d + KP_TSK * (q_d - data.qpos) + KD_TSK * (qd_d - data.qvel)
+            else:
+                qdd_cmd = qdd_d
+            scratch.qacc[:] = qdd_cmd
+
             mujoco.mj_inverse(model, scratch)
             tau_ff = scratch.qfrc_inverse.copy()
             ff_peaks = np.maximum(ff_peaks, np.abs(tau_ff))
@@ -195,35 +194,32 @@ def main():
     errs = np.array(errs) * 1000
     mean, p95, mx = float(errs.mean()), float(np.percentile(errs, 95)), float(errs.max())
     print(f"\ntracking error: mean={mean:.2f} mm  p95={p95:.2f} mm  max={mx:.2f} mm  ({len(errs)} frames)")
-    print(f"FF peak torque per joint (N·m): "
+    print("FF peak torque per joint (N·m): "
           + ", ".join(f"J{i+1}={v:.1f}" for i, v in enumerate(ff_peaks)))
 
     OUT_MP4.parent.mkdir(parents=True, exist_ok=True)
     imageio.mimwrite(str(OUT_MP4), frames, fps=FPS, quality=7, macro_block_size=1)
     print(f"wrote {OUT_MP4} ({OUT_MP4.stat().st_size/1024:.1f} KiB)")
 
-    # append new row to TUNING_REPORT.md
+    # append to TUNING_REPORT.md
     if REPORT.exists():
         content = REPORT.read_text()
-        new_row = (
-            f"| **tuned + full ID FF (mj_inverse)** | "
-            f"**{mean:.2f}** | **{p95:.2f}** | **{mx:.2f}** |\n"
-        )
+        row_label = f"tuned + current-state ID FF{' + task-PD' if USE_TASK_PD else ''}"
+        new_row = f"| **{row_label}** | **{mean:.2f}** | **{p95:.2f}** | **{mx:.2f}** |\n"
         if new_row not in content:
-            anchor = "| **tuned + gravity FF (PD + qfrc_applied)** |"
+            anchor = "| **tuned + full ID FF (mj_inverse)** |"
             if anchor in content:
-                # insert right after gravity FF row
                 lines = content.splitlines(keepends=True)
                 out = []
-                for i, ln in enumerate(lines):
+                for ln in lines:
                     out.append(ln)
                     if ln.startswith(anchor):
                         out.append(new_row)
                 REPORT.write_text("".join(out))
-                print(f"appended full-ID-FF row to {REPORT.name}")
+                print(f"appended row to {REPORT.name}")
             else:
                 with REPORT.open("a") as fh:
-                    fh.write(f"\n### Update (full ID FF added)\n\n{new_row}\n")
+                    fh.write(f"\n### Update ({row_label})\n\n{new_row}\n")
     return 0
 
 

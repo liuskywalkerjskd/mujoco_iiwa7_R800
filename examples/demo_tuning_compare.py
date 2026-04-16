@@ -21,9 +21,9 @@ import mujoco
 import imageio.v2 as imageio
 
 HERE = Path(__file__).resolve().parent
-LEGACY_SCENE = HERE / "iiwa7" / "iiwa7_square_scene.xml"
-TUNED_SCENE  = HERE / "iiwa7" / "iiwa7_tuned_square_scene.xml"
-REPORT_PATH  = HERE / "TUNING_REPORT.md"
+LEGACY_SCENE = HERE / "scenes" / "iiwa7_square_scene.xml"
+TUNED_SCENE  = HERE / "scenes" / "iiwa7_tuned_square_scene.xml"
+REPORT_PATH  = HERE.parent / "TUNING_REPORT.md"
 
 WIDTH, HEIGHT = 720, 540
 FPS = 30
@@ -162,8 +162,8 @@ def run_actuated(scene_path: Path, label: str, out_mp4: Path):
 
 
 def main():
-    legacy_out = HERE / "media" / "videos" / "demo_square_actuated_legacy.mp4"
-    tuned_out  = HERE / "media" / "videos" / "demo_square_actuated_tuned.mp4"
+    legacy_out = HERE.parent / "media" / "videos" / "demo_square_actuated_legacy.mp4"
+    tuned_out  = HERE.parent / "media" / "videos" / "demo_square_actuated_tuned.mp4"
 
     lm, lx, l95 = run_actuated(LEGACY_SCENE, "legacy (position, kp=400/200/100)", legacy_out)
     tm, tx, t95 = run_actuated(TUNED_SCENE,  "tuned (general, kp=2000 kd=200)",    tuned_out)
