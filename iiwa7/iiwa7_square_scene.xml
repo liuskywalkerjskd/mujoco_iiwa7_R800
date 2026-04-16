@@ -1,0 +1,81 @@
+<mujoco model="iiwa7_square_scene">
+  <!--
+    Scene wrapper for iiwa7.xml with a reference square overlay.
+
+    Draws the 4 corners of a 30 cm x 30 cm square at Z = 0.55 m as cyan
+    spheres, and connects them with 4 capsules so the planned end-effector
+    path is visible in the recorded video.
+
+    Corners (world frame, meters):
+      A = (0.35, -0.15, 0.55)   B = (0.65, -0.15, 0.55)
+      D = (0.35, +0.15, 0.55)   C = (0.65, +0.15, 0.55)
+
+    Also adds an EE marker site on iiwa_link_7 so jacobian queries target a
+    consistent point (5 cm beyond link_7 origin along its local +Z / tool axis).
+  -->
+
+  <include file="iiwa7.xml"/>
+
+  <option integrator="implicitfast" timestep="0.002"/>
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="135" elevation="-25" offwidth="720" offheight="540"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0"
+             width="512" height="3072"/>
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge"
+             rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3" markrgb="0.8 0.8 0.8"
+             width="300" height="300"/>
+    <material name="groundplane" texture="groundplane" texuniform="true"
+              texrepeat="5 5" reflectance="0.2"/>
+    <material name="square_mat" rgba="0 1 1 0.9"/>
+    <material name="trail_mat"  rgba="1 0.4 0 1"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 1.8" dir="0 0 -1" directional="true"/>
+    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
+
+    <!-- Square corners (spheres) -->
+    <geom name="corner_A" type="sphere" size="0.018" pos="0.35 -0.15 0.55" material="square_mat" contype="0" conaffinity="0"/>
+    <geom name="corner_B" type="sphere" size="0.018" pos="0.65 -0.15 0.55" material="square_mat" contype="0" conaffinity="0"/>
+    <geom name="corner_C" type="sphere" size="0.018" pos="0.65  0.15 0.55" material="square_mat" contype="0" conaffinity="0"/>
+    <geom name="corner_D" type="sphere" size="0.018" pos="0.35  0.15 0.55" material="square_mat" contype="0" conaffinity="0"/>
+
+    <!-- Square edges (capsules connecting corners) -->
+    <geom name="edge_AB" type="capsule" size="0.006" fromto="0.35 -0.15 0.55  0.65 -0.15 0.55" material="square_mat" contype="0" conaffinity="0"/>
+    <geom name="edge_BC" type="capsule" size="0.006" fromto="0.65 -0.15 0.55  0.65  0.15 0.55" material="square_mat" contype="0" conaffinity="0"/>
+    <geom name="edge_CD" type="capsule" size="0.006" fromto="0.65  0.15 0.55  0.35  0.15 0.55" material="square_mat" contype="0" conaffinity="0"/>
+    <geom name="edge_DA" type="capsule" size="0.006" fromto="0.35  0.15 0.55  0.35 -0.15 0.55" material="square_mat" contype="0" conaffinity="0"/>
+  </worldbody>
+
+  <!-- Add an EE site on iiwa_link_7 for Jacobian / IK queries -->
+  <worldbody>
+    <!-- nothing here; site is patched into iiwa_link_7 below via attach -->
+  </worldbody>
+
+  <!-- site attach is done via keyframe-free sub-element on existing body -->
+  <sensor>
+    <!-- framepos on iiwa_link_7 gives us EE position without needing a site -->
+    <framepos name="ee_pos" objtype="body" objname="iiwa_link_7"/>
+  </sensor>
+
+  <actuator>
+    <position name="iiwa_joint_1_pos" joint="iiwa_joint_1" kp="400" ctrlrange="-2.96706 2.96706"/>
+    <position name="iiwa_joint_2_pos" joint="iiwa_joint_2" kp="400" ctrlrange="-2.09440 2.09440"/>
+    <position name="iiwa_joint_3_pos" joint="iiwa_joint_3" kp="400" ctrlrange="-2.96706 2.96706"/>
+    <position name="iiwa_joint_4_pos" joint="iiwa_joint_4" kp="400" ctrlrange="-2.09440 2.09440"/>
+    <position name="iiwa_joint_5_pos" joint="iiwa_joint_5" kp="200" ctrlrange="-2.96706 2.96706"/>
+    <position name="iiwa_joint_6_pos" joint="iiwa_joint_6" kp="200" ctrlrange="-2.09440 2.09440"/>
+    <position name="iiwa_joint_7_pos" joint="iiwa_joint_7" kp="100" ctrlrange="-3.05433 3.05433"/>
+  </actuator>
+
+  <keyframe>
+    <key name="home"  qpos="0 0 0 0 0 0 0" ctrl="0 0 0 0 0 0 0"/>
+    <key name="ready" qpos="0 0.5 0 -1.2 0 0.8 0" ctrl="0 0.5 0 -1.2 0 0.8 0"/>
+  </keyframe>
+</mujoco>

@@ -1,0 +1,60 @@
+<mujoco model="iiwa7_scene">
+  <!--
+    Scene wrapper for iiwa7.xml.
+
+    Adds what MuJoCo menagerie-style setups normally ship on top of a bare
+    robot model:
+      - ground plane + skybox + headlight so `mujoco.viewer` shows something
+        useful out of the box
+      - position actuators on all 7 joints so controllers can set joint
+        targets directly via data.ctrl[:]
+      - a "home" keyframe matching iiwa_moveit/config/iiwa7.srdf group_state
+
+    Joint ranges below mirror iiwa7.urdf hard limits (radians):
+      J1/J3/J5: +/- 170 deg   ~  +/- 2.96706
+      J2/J4/J6: +/- 120 deg   ~  +/- 2.09440
+      J7:       +/- 175 deg   ~  +/- 3.05433
+
+    kp values are conservative for first-touch use; raise once tuned.
+  -->
+
+  <include file="iiwa7.xml"/>
+
+  <option integrator="implicitfast" timestep="0.002"/>
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="120" elevation="-20"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0"
+             width="512" height="3072"/>
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge"
+             rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3" markrgb="0.8 0.8 0.8"
+             width="300" height="300"/>
+    <material name="groundplane" texture="groundplane" texuniform="true"
+              texrepeat="5 5" reflectance="0.2"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
+  </worldbody>
+
+  <actuator>
+    <position name="iiwa_joint_1_pos" joint="iiwa_joint_1" kp="200" ctrlrange="-2.96706 2.96706"/>
+    <position name="iiwa_joint_2_pos" joint="iiwa_joint_2" kp="200" ctrlrange="-2.09440 2.09440"/>
+    <position name="iiwa_joint_3_pos" joint="iiwa_joint_3" kp="200" ctrlrange="-2.96706 2.96706"/>
+    <position name="iiwa_joint_4_pos" joint="iiwa_joint_4" kp="200" ctrlrange="-2.09440 2.09440"/>
+    <position name="iiwa_joint_5_pos" joint="iiwa_joint_5" kp="100" ctrlrange="-2.96706 2.96706"/>
+    <position name="iiwa_joint_6_pos" joint="iiwa_joint_6" kp="100" ctrlrange="-2.09440 2.09440"/>
+    <position name="iiwa_joint_7_pos" joint="iiwa_joint_7" kp="50"  ctrlrange="-3.05433 3.05433"/>
+  </actuator>
+
+  <keyframe>
+    <key name="home" qpos="0 0 0 0 0 0 0" ctrl="0 0 0 0 0 0 0"/>
+    <key name="ready" qpos="0 0.5 0 -1.2 0 0.8 0" ctrl="0 0.5 0 -1.2 0 0.8 0"/>
+  </keyframe>
+</mujoco>
