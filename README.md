@@ -250,9 +250,9 @@ See [Demo Videos / 效果展示](#-效果展示--demo-videos) below.
 ## 🎬 效果展示 / Demo Videos
 
 Each clip is rendered headlessly on a display-less server via `MUJOCO_GL=egl`,
-H.264 MP4, 720×540 @ 30 fps. Click any link to play inline on GitHub.
+H.264 MP4, 720×540 @ 30 fps, and embedded below for inline playback on GitHub.
 
-每段视频均为 `MUJOCO_GL=egl` 无头渲染，H.264 MP4，720×540 @ 30 fps。点击链接可在 GitHub 上内嵌播放。
+每段视频均为 `MUJOCO_GL=egl` 无头渲染，H.264 MP4，720×540 @ 30 fps，已在下方内嵌，可直接在 GitHub README 中播放。
 
 ### 1. 水平方形（精调控制器） / Horizontal square (best controller)
 
@@ -260,42 +260,42 @@ H.264 MP4, 720×540 @ 30 fps. Click any link to play inline on GitHub.
 > 展示完整控制器栈：current-state ID FF + task-PD  
 > flagship demo — 30×30 cm horizontal square traced twice
 
-▶ [`iiwa7/demo_square_current_state_ff.mp4`](iiwa7/demo_square_current_state_ff.mp4)
+<video src="iiwa7/demo_square_current_state_ff.mp4" controls muted playsinline preload="metadata" width="720"></video>
 
 ### 2. 垂直圆 / Vertical circle
 
 > mean 5.65 mm / max 14.24 mm — XZ 平面半径 15 cm，2 圈  
 > EE traces a circle of radius 15 cm in the XZ plane
 
-▶ [`iiwa7/demo_motion_vcircle.mp4`](iiwa7/demo_motion_vcircle.mp4)
+<video src="iiwa7/demo_motion_vcircle.mp4" controls muted playsinline preload="metadata" width="720"></video>
 
 ### 3. 垂直矩形 / Vertical rectangle
 
 > mean 9.13 mm / max 18.61 mm — XZ 平面 30×20 cm，2 圈  
 > EE traces a 30×20 cm rectangle in the XZ plane, 2 loops
 
-▶ [`iiwa7/demo_motion_vrect.mp4`](iiwa7/demo_motion_vrect.mp4)
+<video src="iiwa7/demo_motion_vrect.mp4" controls muted playsinline preload="metadata" width="720"></video>
 
 ### 4. 8 字形 / Figure-8 (Lissajous)
 
 > mean 8.81 mm / max 26.39 mm — XY 水平面 Lissajous：`x=cx+A cos t, y=cy+B sin 2t`  
 > Horizontal XY Lissajous figure-8
 
-▶ [`iiwa7/demo_motion_figure8.mp4`](iiwa7/demo_motion_figure8.mp4)
+<video src="iiwa7/demo_motion_figure8.mp4" controls muted playsinline preload="metadata" width="720"></video>
 
 ### 5. 螺旋上升 / Conical spiral
 
 > mean 9.46 mm / max 19.27 mm — 半径 0.20→0.05 m，Z 0.35→0.75 m，3 圈  
 > Radius shrinks 0.20→0.05 m while Z rises 0.35→0.75 m, 3 turns
 
-▶ [`iiwa7/demo_motion_spiral.mp4`](iiwa7/demo_motion_spiral.mp4)
+<video src="iiwa7/demo_motion_spiral.mp4" controls muted playsinline preload="metadata" width="720"></video>
 
 ### 6. 避障 / Obstacle avoidance
 
 > mean 7.12 mm / max 14.78 mm — 绕过红色垂直障碍柱，Z 方向飞越  
 > Arcs over a red vertical pillar, lifting to Z=0.85 for safety margin
 
-▶ [`iiwa7/demo_motion_obstacle.mp4`](iiwa7/demo_motion_obstacle.mp4)
+<video src="iiwa7/demo_motion_obstacle.mp4" controls muted playsinline preload="metadata" width="720"></video>
 
 ### 7. 6-DOF 方形（末端锁定朝下） / 6-DOF square (tool pointing down)
 
@@ -303,7 +303,7 @@ H.264 MP4, 720×540 @ 30 fps. Click any link to play inline on GitHub.
 > Horizontal 20×20 cm square with end-effector orientation locked to point downward  
 > Uses extended 6-DOF damped-least-squares IK (3×7 pos + 3×7 rot Jacobians, quaternion error)
 
-▶ [`iiwa7/demo_motion_sq6dof.mp4`](iiwa7/demo_motion_sq6dof.mp4)
+<video src="iiwa7/demo_motion_sq6dof.mp4" controls muted playsinline preload="metadata" width="720"></video>
 
 ---
 
