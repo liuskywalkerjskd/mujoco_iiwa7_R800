@@ -6,7 +6,7 @@ Cross-referenced against [mujoco_menagerie/kuka_iiwa_14](https://github.com/goog
 
 | model                            | mean (mm) | p95 (mm) | max (mm) |
 |---                                |---        |---       |---       |
-| legacy (position, kp=400/200/100) |   94.81 | 156.49 | 169.55 |
+| legacy (position, kp=400/200/100) |   94.80 | 156.06 | 169.07 |
 | **tuned (general, kp=2000 kd=200)**| **22.28** | **30.37** | **31.90** |
 
 improvement: mean 4.3x, max 5.3x

@@ -1,54 +1,98 @@
 <mujoco model="iiwa7">
-  <compiler angle="radian" meshdir="../meshes/iiwa7/" autolimits="true"/>
+  <!--
+    Base iiwa7 MJCF (auto-converted from iiwa_stack URDF, then upgraded
+    to use the same split-mesh visual assets as iiwa7_tuned.xml).
+    No actuator, no tuning. Add your own actuators in a scene file
+    that includes this.
+  -->
+
+  <compiler angle="radian" meshdir="../meshes" autolimits="true"/>
   <statistic meansize="0.17628" extent="1.44361" center="-0.000411357 -0.010872 0.595861"/>
+
   <asset>
-    <mesh name="link_0" file="collision/link_0.stl"/>
-    <mesh name="link_1" file="collision/link_1.stl"/>
-    <mesh name="link_2" file="collision/link_2.stl"/>
-    <mesh name="link_3" file="collision/link_3.stl"/>
-    <mesh name="link_4" file="collision/link_4.stl"/>
-    <mesh name="link_5" file="collision/link_5.stl"/>
-    <mesh name="link_6" file="collision/link_6.stl"/>
-    <mesh name="link_7" file="collision/link_7.stl"/>
+    <!-- Materials (iiwa_stack URDF original color values) -->
+    <material name="iiwa_grey"   rgba="0.4 0.4 0.4 1" specular="0.5" shininess="0.25"/>
+    <material name="iiwa_orange" rgba="1.0 0.423529 0.0392157 1" specular="0.5" shininess="0.25"/>
+
+    <!-- Visual meshes: iiwa7 STL split into orange+grey sub-meshes where applicable -->
+    <mesh name="link_0_vis"        file="iiwa7_split/link_0.obj"/>
+    <mesh name="link_1_vis"        file="iiwa7_split/link_1.obj"/>
+    <mesh name="link_2_orange_vis" file="iiwa7_split/link_2_orange.obj"/>
+    <mesh name="link_2_grey_vis"   file="iiwa7_split/link_2_grey.obj"/>
+    <mesh name="link_3_vis"        file="iiwa7_split/link_3.obj"/>
+    <mesh name="link_4_orange_vis" file="iiwa7_split/link_4_orange.obj"/>
+    <mesh name="link_4_grey_vis"   file="iiwa7_split/link_4_grey.obj"/>
+    <mesh name="link_5_vis"        file="iiwa7_split/link_5.obj"/>
+    <mesh name="link_6_orange_vis" file="iiwa7_split/link_6_orange.obj"/>
+    <mesh name="link_6_grey_vis"   file="iiwa7_split/link_6_grey.obj"/>
+    <mesh name="link_7_vis"        file="iiwa7_split/link_7.obj"/>
+
+    <!-- Collision meshes: original iiwa7 STL -->
+    <mesh name="link_0_col" file="iiwa7/collision/link_0.stl"/>
+    <mesh name="link_1_col" file="iiwa7/collision/link_1.stl"/>
+    <mesh name="link_2_col" file="iiwa7/collision/link_2.stl"/>
+    <mesh name="link_3_col" file="iiwa7/collision/link_3.stl"/>
+    <mesh name="link_4_col" file="iiwa7/collision/link_4.stl"/>
+    <mesh name="link_5_col" file="iiwa7/collision/link_5.stl"/>
+    <mesh name="link_6_col" file="iiwa7/collision/link_6.stl"/>
+    <mesh name="link_7_col" file="iiwa7/collision/link_7.stl"/>
   </asset>
+
   <worldbody>
-    <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.4 0.4 0.4 1" mesh="link_0"/>
-    <geom type="mesh" rgba="0.4 0.4 0.4 1" mesh="link_0"/>
+    <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_grey" mesh="link_0_vis"/>
+    <geom type="mesh" group="3" mesh="link_0_col"/>
+
     <body name="iiwa_link_1" pos="0 0 0.15">
-      <inertial pos="0 -0.03 0.12" quat="0.428904 0.562175 -0.562175 0.428904" mass="3.4525" diaginertia="0.0218946 0.02183 0.00663837"/>
+      <inertial pos="0 -0.03 0.12" quat="0.428904 0.562175 -0.562175 0.428904"
+                mass="3.4525" diaginertia="0.0218946 0.02183 0.00663837"/>
       <joint name="iiwa_joint_1" pos="0 0 0" axis="0 0 1" range="-2.96706 2.96706" damping="0.5"/>
-      <geom pos="0 0 0.0075" type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 0.423529 0.0392157 1" mesh="link_1"/>
-      <geom pos="0 0 0.0075" type="mesh" rgba="1 0.423529 0.0392157 1" mesh="link_1"/>
+      <geom pos="0 0 0.0075" type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_grey" mesh="link_1_vis"/>
+      <geom type="mesh" group="3" mesh="link_1_col"/>
+
       <body name="iiwa_link_2" pos="0 0 0.19" quat="0 0 0.707107 0.707107">
-        <inertial pos="0.0003 0.059 0.042" quat="0.701371 0.0898824 0.0898824 0.701371" mass="3.4821" diaginertia="0.02179 0.0217049 0.00684512"/>
+        <inertial pos="0.0003 0.059 0.042" quat="0.701371 0.0898824 0.0898824 0.701371"
+                  mass="3.4821" diaginertia="0.02179 0.0217049 0.00684512"/>
         <joint name="iiwa_joint_2" pos="0 0 0" axis="0 0 1" range="-2.0944 2.0944" damping="0.5"/>
-        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 0.423529 0.0392157 1" mesh="link_2"/>
-        <geom type="mesh" rgba="1 0.423529 0.0392157 1" mesh="link_2"/>
+        <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_orange" mesh="link_2_orange_vis"/>
+        <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_grey"   mesh="link_2_grey_vis"/>
+        <geom type="mesh" group="3" mesh="link_2_col"/>
+
         <body name="iiwa_link_3" pos="0 0.21 0" quat="0 0 0.707107 0.707107">
-          <inertial pos="0 0.03 0.13" quat="0.56292 0.427927 -0.427927 0.56292" mass="4.05623" diaginertia="0.0321488 0.03204 0.00799117"/>
+          <inertial pos="0 0.03 0.13" quat="0.56292 0.427927 -0.427927 0.56292"
+                    mass="4.05623" diaginertia="0.0321488 0.03204 0.00799117"/>
           <joint name="iiwa_joint_3" pos="0 0 0" axis="0 0 1" range="-2.96706 2.96706" damping="0.5"/>
-          <geom pos="0 0 -0.026" type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 0.423529 0.0392157 1" mesh="link_3"/>
-          <geom pos="0 0 -0.026" type="mesh" rgba="1 0.423529 0.0392157 1" mesh="link_3"/>
+          <geom pos="0 0 -0.026" type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_grey" mesh="link_3_vis"/>
+          <geom type="mesh" group="3" mesh="link_3_col"/>
+
           <body name="iiwa_link_4" pos="0 0 0.19" quat="0.707107 0.707107 0 0">
-            <inertial pos="0 0.067 0.034" quat="0.991887 -0.127124 0 0" mass="3.4822" diaginertia="0.02178 0.0216947 0.00684029"/>
+            <inertial pos="0 0.067 0.034" quat="0.991887 -0.127124 0 0"
+                      mass="3.4822" diaginertia="0.02178 0.0216947 0.00684029"/>
             <joint name="iiwa_joint_4" pos="0 0 0" axis="0 0 1" range="-2.0944 2.0944" damping="0.5"/>
-            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 0.423529 0.0392157 1" mesh="link_4"/>
-            <geom type="mesh" rgba="1 0.423529 0.0392157 1" mesh="link_4"/>
+            <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_orange" mesh="link_4_orange_vis"/>
+            <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_grey"   mesh="link_4_grey_vis"/>
+            <geom type="mesh" group="3" mesh="link_4_col"/>
+
             <body name="iiwa_link_5" pos="0 0.21 0" quat="0 0 0.707107 0.707107">
-              <inertial pos="0.0001 0.021 0.076" quat="0.365352 0.605407 -0.605407 0.365352" mass="2.1633" diaginertia="0.0131987 0.01287 0.0036293"/>
+              <inertial pos="0.0001 0.021 0.076" quat="0.365352 0.605407 -0.605407 0.365352"
+                        mass="2.1633" diaginertia="0.0131987 0.01287 0.0036293"/>
               <joint name="iiwa_joint_5" pos="0 0 0" axis="0 0 1" range="-2.96706 2.96706" damping="0.5"/>
-              <geom pos="0 0 -0.026" type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 0.423529 0.0392157 1" mesh="link_5"/>
-              <geom pos="0 0 -0.026" type="mesh" rgba="1 0.423529 0.0392157 1" mesh="link_5"/>
+              <geom pos="0 0 -0.026" type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_grey" mesh="link_5_vis"/>
+              <geom type="mesh" group="3" mesh="link_5_col"/>
+
               <body name="iiwa_link_6" pos="0 0.0607 0.19" quat="0.707107 0.707107 0 0">
-                <inertial pos="0 0.0006 0.0004" quat="0.996112 0.088097 0 0" mass="2.3466" diaginertia="0.006509 0.00631585 0.00447015"/>
+                <inertial pos="0 0.0006 0.0004" quat="0.996112 0.088097 0 0"
+                          mass="2.3466" diaginertia="0.006509 0.00631585 0.00447015"/>
                 <joint name="iiwa_joint_6" pos="0 0 0" axis="0 0 1" range="-2.0944 2.0944" damping="0.5"/>
-                <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 0.423529 0.0392157 1" mesh="link_6"/>
-                <geom type="mesh" rgba="1 0.423529 0.0392157 1" mesh="link_6"/>
+                <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_orange" mesh="link_6_orange_vis"/>
+                <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_grey"   mesh="link_6_grey_vis"/>
+                <geom type="mesh" group="3" mesh="link_6_col"/>
+
                 <body name="iiwa_link_7" pos="0 0.081 0.0607" quat="0 0 0.707107 0.707107">
-                  <inertial pos="0 0 0.02" quat="0.923068 0 0 0.384636" mass="3.129" diaginertia="0.0152362 0.0140538 0.002872"/>
+                  <inertial pos="0 0 0.02" quat="0.923068 0 0 0.384636"
+                            mass="3.129" diaginertia="0.0152362 0.0140538 0.002872"/>
                   <joint name="iiwa_joint_7" pos="0 0 0" axis="0 0 1" range="-3.05433 3.05433" damping="0.5"/>
-                  <geom pos="0 0 -0.0005" type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.4 0.4 0.4 1" mesh="link_7"/>
-                  <geom pos="0 0 -0.0005" type="mesh" rgba="0.4 0.4 0.4 1" mesh="link_7"/>
+                  <geom pos="0 0 -0.0005" type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_grey" mesh="link_7_vis"/>
+                  <geom type="mesh" group="3" mesh="link_7_col"/>
                 </body>
               </body>
             </body>
