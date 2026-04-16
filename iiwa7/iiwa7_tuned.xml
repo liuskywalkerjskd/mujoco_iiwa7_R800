@@ -1,39 +1,26 @@
 <mujoco model="iiwa7_tuned">
   <!--
-    iiwa7 MJCF, tuned after cross-reference with mujoco_menagerie's iiwa14:
-    https://github.com/google-deepmind/mujoco_menagerie/blob/main/kuka_iiwa_14/iiwa14.xml
+    iiwa7 MJCF with geometry-split visual meshes.
 
-    Diffs from the auto-generated iiwa7.xml:
-      1. <default> class hierarchy (iiwa / joint1 / joint2 / joint3) — dedupes
-         joint ranges and actuator ctrlrange per menagerie convention.
-      2. Actuator switched from `position` (pure P, no velocity term) to
-         `general` with gaintype=fixed, biastype=affine — gives full PD control
-         via gainprm/biasprm. kp=2000 kd=200 uniform across joints
-         (menagerie iiwa14 uses exactly these values; stable for any
-         iiwa-scale 7-DOF arm).
-      3. <forcerange> added per joint, matching iiwa7 datasheet torque limits
-         (J1/2: 176 Nm, J3/4/5: 110 Nm, J6/7: 40 Nm). iiwa7 torque ceilings
-         are lower than iiwa14's (which peaks at 320 Nm on J1/J2).
-      4. <armature> added (0.1) to all joints — reflects harmonic-drive rotor
-         inertia through the gearbox; improves numerical stability at large
-         dt/kp combinations. menagerie omits this but we have higher kp/I on
-         distal joints so benefit is visible.
-      5. <contact><exclude> clauses prevent false self-contacts between
-         non-adjacent bodies (base-link2, base-link3, link1-link3, link3-link5,
-         link4-link7, link5-link7). Copied verbatim from menagerie topology.
-      6. attachment_site added at (0 0 0.05) on link7 — standard menagerie
-         convention for tool mounting / IK target.
-      7. Joint damping kept at 0.5 from URDF (different from menagerie, which
-         uses 0). Rationale: 0.5 << actuator kd=200, so actuator-in-loop
-         behavior is unchanged; but when the actuator is disabled the model
-         still settles passively instead of free-fall oscillating.
+    Visual:    iiwa7 STL split by KD-tree nearest-neighbor classification
+               against mujoco_menagerie iiwa14's split OBJ reference.
+               link_2/4/6 each become orange + grey sub-meshes; others stay
+               single-piece. Material colors follow Drake PR #36 (grey 0.2,
+               orange 1.0/0.15/0).
+    Collision: original iiwa_stack iiwa7 STL files (unchanged — drive physics).
+    Kinematics/dynamics: body_pos, inertias, joint ranges, masses all iiwa7
+               originals. Controller tuning kept identical.
 
-    Inertias are NOT copied from menagerie — iiwa14 link masses (5.76 / 6.35
-    / 3.5 kg) differ from iiwa7 link masses (3.45 / 3.48 / 4.06 kg). The
-    URDF-sourced values in iiwa7.xml are the correct iiwa7 values.
+    Tuning (menagerie-derived):
+      - general actuator gaintype=fixed biastype=affine,
+        gainprm=2000 biasprm="0 -2000 -200" (PD kp=2000 kd=200)
+      - per-joint forcerange matching iiwa7 datasheet torques
+      - armature 0.1 for numerical stability under stiff PD
+      - 7 contact excludes between non-adjacent bodies
+      - joint damping 0.5 from URDF (kept for passive-sim stability)
   -->
 
-  <compiler angle="radian" meshdir="../meshes/iiwa7" autolimits="true"/>
+  <compiler angle="radian" meshdir="../meshes" autolimits="true"/>
 
   <option integrator="implicitfast" timestep="0.002"/>
 
@@ -69,73 +56,100 @@
         <joint range="-3.05433 3.05433"/>
         <general ctrlrange="-3.05433 3.05433" forcerange="-40 40"/>
       </default>
+      <default class="visual">
+        <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_grey"/>
+      </default>
+      <default class="collision">
+        <geom type="mesh" group="3"/>
+      </default>
     </default>
   </default>
 
   <asset>
-    <mesh name="link_0" file="collision/link_0.stl"/>
-    <mesh name="link_1" file="collision/link_1.stl"/>
-    <mesh name="link_2" file="collision/link_2.stl"/>
-    <mesh name="link_3" file="collision/link_3.stl"/>
-    <mesh name="link_4" file="collision/link_4.stl"/>
-    <mesh name="link_5" file="collision/link_5.stl"/>
-    <mesh name="link_6" file="collision/link_6.stl"/>
-    <mesh name="link_7" file="collision/link_7.stl"/>
+    <!-- Materials (Drake PR #36 official iiwa7 scheme) -->
+    <material name="iiwa_grey"   rgba="0.2 0.2 0.2 1" specular="0.5" shininess="0.25"/>
+    <material name="iiwa_orange" rgba="1.0 0.15 0 1" specular="0.5" shininess="0.25"/>
+
+    <!-- Visual meshes: iiwa7 STL split by mesh-surface classification -->
+    <mesh name="link_0_vis"        file="iiwa7_split/link_0.obj"/>
+    <mesh name="link_1_vis"        file="iiwa7_split/link_1.obj"/>
+    <mesh name="link_2_orange_vis" file="iiwa7_split/link_2_orange.obj"/>
+    <mesh name="link_2_grey_vis"   file="iiwa7_split/link_2_grey.obj"/>
+    <mesh name="link_3_vis"        file="iiwa7_split/link_3.obj"/>
+    <mesh name="link_4_orange_vis" file="iiwa7_split/link_4_orange.obj"/>
+    <mesh name="link_4_grey_vis"   file="iiwa7_split/link_4_grey.obj"/>
+    <mesh name="link_5_vis"        file="iiwa7_split/link_5.obj"/>
+    <mesh name="link_6_orange_vis" file="iiwa7_split/link_6_orange.obj"/>
+    <mesh name="link_6_grey_vis"   file="iiwa7_split/link_6_grey.obj"/>
+    <mesh name="link_7_vis"        file="iiwa7_split/link_7.obj"/>
+
+    <!-- Collision meshes: original iiwa7 STL (unscaled — drives physics) -->
+    <mesh name="link_0_col" file="iiwa7/collision/link_0.stl"/>
+    <mesh name="link_1_col" file="iiwa7/collision/link_1.stl"/>
+    <mesh name="link_2_col" file="iiwa7/collision/link_2.stl"/>
+    <mesh name="link_3_col" file="iiwa7/collision/link_3.stl"/>
+    <mesh name="link_4_col" file="iiwa7/collision/link_4.stl"/>
+    <mesh name="link_5_col" file="iiwa7/collision/link_5.stl"/>
+    <mesh name="link_6_col" file="iiwa7/collision/link_6.stl"/>
+    <mesh name="link_7_col" file="iiwa7/collision/link_7.stl"/>
   </asset>
 
   <worldbody>
     <body name="iiwa_link_0" childclass="iiwa">
-      <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.4 0.4 0.4 1" mesh="link_0"/>
-      <geom type="mesh" rgba="0.4 0.4 0.4 1" mesh="link_0"/>
+      <geom class="visual" mesh="link_0_vis"/>
+      <geom class="collision" mesh="link_0_col"/>
 
       <body name="iiwa_link_1" pos="0 0 0.15">
         <inertial pos="0 -0.03 0.12" quat="0.428904 0.562175 -0.562175 0.428904"
                   mass="3.4525" diaginertia="0.0218946 0.02183 0.00663837"/>
         <joint name="iiwa_joint_1" class="joint1"/>
-        <geom pos="0 0 0.0075" type="mesh" contype="0" conaffinity="0" group="1" rgba="1 0.424 0.039 1" mesh="link_1"/>
-        <geom pos="0 0 0.0075" type="mesh" rgba="1 0.424 0.039 1" mesh="link_1"/>
+        <geom class="visual" pos="0 0 0.0075" mesh="link_1_vis"/>
+        <geom class="collision" mesh="link_1_col"/>
 
         <body name="iiwa_link_2" pos="0 0 0.19" quat="0 0 0.707107 0.707107">
           <inertial pos="0.0003 0.059 0.042" quat="0.701371 0.0898824 0.0898824 0.701371"
                     mass="3.4821" diaginertia="0.02179 0.0217049 0.00684512"/>
           <joint name="iiwa_joint_2" class="joint2"/>
-          <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="1 0.424 0.039 1" mesh="link_2"/>
-          <geom type="mesh" rgba="1 0.424 0.039 1" mesh="link_2"/>
+          <geom class="visual" material="iiwa_orange" mesh="link_2_orange_vis"/>
+          <geom class="visual" mesh="link_2_grey_vis"/>
+          <geom class="collision" mesh="link_2_col"/>
 
           <body name="iiwa_link_3" pos="0 0.21 0" quat="0 0 0.707107 0.707107">
             <inertial pos="0 0.03 0.13" quat="0.56292 0.427927 -0.427927 0.56292"
                       mass="4.05623" diaginertia="0.0321488 0.03204 0.00799117"/>
             <joint name="iiwa_joint_3" class="joint3_mid"/>
-            <geom pos="0 0 -0.026" type="mesh" contype="0" conaffinity="0" group="1" rgba="1 0.424 0.039 1" mesh="link_3"/>
-            <geom pos="0 0 -0.026" type="mesh" rgba="1 0.424 0.039 1" mesh="link_3"/>
+            <geom class="visual" pos="0 0 -0.026" mesh="link_3_vis"/>
+            <geom class="collision" mesh="link_3_col"/>
 
             <body name="iiwa_link_4" pos="0 0 0.19" quat="0.707107 0.707107 0 0">
               <inertial pos="0 0.067 0.034" quat="0.991887 -0.127124 0 0"
                         mass="3.4822" diaginertia="0.02178 0.0216947 0.00684029"/>
               <joint name="iiwa_joint_4" class="joint4_mid"/>
-              <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="1 0.424 0.039 1" mesh="link_4"/>
-              <geom type="mesh" rgba="1 0.424 0.039 1" mesh="link_4"/>
+              <geom class="visual" material="iiwa_orange" mesh="link_4_orange_vis"/>
+              <geom class="visual" mesh="link_4_grey_vis"/>
+              <geom class="collision" mesh="link_4_col"/>
 
               <body name="iiwa_link_5" pos="0 0.21 0" quat="0 0 0.707107 0.707107">
                 <inertial pos="0.0001 0.021 0.076" quat="0.365352 0.605407 -0.605407 0.365352"
                           mass="2.1633" diaginertia="0.0131987 0.01287 0.0036293"/>
                 <joint name="iiwa_joint_5" class="joint5_mid"/>
-                <geom pos="0 0 -0.026" type="mesh" contype="0" conaffinity="0" group="1" rgba="1 0.424 0.039 1" mesh="link_5"/>
-                <geom pos="0 0 -0.026" type="mesh" rgba="1 0.424 0.039 1" mesh="link_5"/>
+                <geom class="visual" pos="0 0 -0.026" mesh="link_5_vis"/>
+                <geom class="collision" mesh="link_5_col"/>
 
                 <body name="iiwa_link_6" pos="0 0.0607 0.19" quat="0.707107 0.707107 0 0">
                   <inertial pos="0 0.0006 0.0004" quat="0.996112 0.088097 0 0"
                             mass="2.3466" diaginertia="0.006509 0.00631585 0.00447015"/>
                   <joint name="iiwa_joint_6" class="joint6_distal"/>
-                  <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="1 0.424 0.039 1" mesh="link_6"/>
-                  <geom type="mesh" rgba="1 0.424 0.039 1" mesh="link_6"/>
+                  <geom class="visual" material="iiwa_orange" mesh="link_6_orange_vis"/>
+                  <geom class="visual" mesh="link_6_grey_vis"/>
+                  <geom class="collision" mesh="link_6_col"/>
 
                   <body name="iiwa_link_7" pos="0 0.081 0.0607" quat="0 0 0.707107 0.707107">
                     <inertial pos="0 0 0.02" quat="0.923068 0 0 0.384636"
                               mass="3.129" diaginertia="0.0152362 0.0140538 0.002872"/>
                     <joint name="iiwa_joint_7" class="joint7_distal"/>
-                    <geom pos="0 0 -0.0005" type="mesh" contype="0" conaffinity="0" group="1" rgba="0.4 0.4 0.4 1" mesh="link_7"/>
-                    <geom pos="0 0 -0.0005" type="mesh" rgba="0.4 0.4 0.4 1" mesh="link_7"/>
+                    <geom class="visual" pos="0 0 -0.0005" mesh="link_7_vis"/>
+                    <geom class="collision" mesh="link_7_col"/>
                     <site name="attachment_site" pos="0 0 0.05" size="0.005" rgba="1 0 0 1" group="4"/>
                   </body>
                 </body>
