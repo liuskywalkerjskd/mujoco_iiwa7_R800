@@ -26,6 +26,11 @@ os.environ.setdefault("MUJOCO_GL", "egl")
 import sys
 from pathlib import Path
 
+
+# Unified controller — one class drives all demos.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from iiwa7_controller import IiwaEEController
 import numpy as np
 import mujoco
 import imageio.v2 as imageio
@@ -129,8 +134,6 @@ def main():
     print(f"loading {TUNED_SCENE.name}")
     model = mujoco.MjModel.from_xml_path(str(TUNED_SCENE))
     data = mujoco.MjData(model)
-    scratch = mujoco.MjData(model)
-
     print("precomputing IK targets at frame rate...")
     q_frames, ref_path, ee, tool = precompute_q_at_frames(model)
     n_frames = q_frames.shape[0]
@@ -150,6 +153,7 @@ def main():
         return q, qd, qdd
 
     mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
+    ctrl = IiwaEEController(model, data, mode="full_id_ff_ref")
     renderer = mujoco.Renderer(model, height=HEIGHT, width=WIDTH)
     cam = mujoco.MjvCamera()
     cam.azimuth = 145.0; cam.elevation = -28.0
@@ -172,17 +176,10 @@ def main():
             q_d, qd_d, qdd_d = eval_ref(t_sim)
 
             # full inverse dynamics at reference state
-            scratch.qpos[:] = q_d
-            scratch.qvel[:] = qd_d
-            scratch.qacc[:] = qdd_d
-            mujoco.mj_inverse(model, scratch)
-            tau_ff = scratch.qfrc_inverse.copy()
-            ff_peaks = np.maximum(ff_peaks, np.abs(tau_ff))
-
-            data.ctrl[:] = q_d
-            data.qfrc_applied[:] = tau_ff
+            ctrl.set_joint_target(q_d)
+            ctrl.update(model, data)
+            ff_peaks = np.maximum(ff_peaks, np.abs(data.qfrc_applied[:model.nv]))
             mujoco.mj_step(model, data)
-
         ee_now = data.xpos[ee] + data.xmat[ee].reshape(3,3) @ tool
         if ref_path[f] is not None:
             errs.append(np.linalg.norm(ref_path[f] - ee_now))

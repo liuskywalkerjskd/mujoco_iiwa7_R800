@@ -29,6 +29,11 @@ os.environ.setdefault("MUJOCO_GL", "egl")
 import sys
 from pathlib import Path
 
+
+# Unified controller — one class drives all demos.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from iiwa7_controller import IiwaEEController
 import numpy as np
 import mujoco
 import imageio.v2 as imageio
@@ -149,6 +154,7 @@ def main():
           + ", ".join(f"J{i+1}={v:.1f}" for i, v in enumerate(ff_peak)))
 
     mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
+    ctrl = IiwaEEController(model, data, mode="gravity_ff")
     renderer = mujoco.Renderer(model, height=HEIGHT, width=WIDTH)
     cam = mujoco.MjvCamera()
     cam.azimuth = 145.0; cam.elevation = -28.0
@@ -159,9 +165,9 @@ def main():
 
     frames, errs = [], []
     for f in range(n):
-        data.ctrl[:] = jt[f]
-        data.qfrc_applied[:] = grav_ff[f]
+        ctrl.set_joint_target(jt[f])
         for _ in range(sim_steps_per_frame):
+            ctrl.update(model, data)
             mujoco.mj_step(model, data)
         ee_now = data.xpos[ee] + data.xmat[ee].reshape(3,3) @ tool
         if rp[f] is not None:

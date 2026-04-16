@@ -25,6 +25,11 @@ os.environ.setdefault("MUJOCO_GL", "egl")
 import sys
 from pathlib import Path
 
+
+# Unified controller — one class drives all demos.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from iiwa7_controller import IiwaEEController
 import numpy as np
 import mujoco
 import imageio.v2 as imageio
@@ -193,6 +198,7 @@ def main() -> int:
     # mj_forward. For a dynamics-under-actuator demo, use iiwa7_scene.xml
     # with demo_record.py instead.
     print("running kinematic playback and rendering...")
+    ctrl = IiwaEEController(model, data, mode="kinematic")
 
     renderer = mujoco.Renderer(model, height=HEIGHT, width=WIDTH)
     camera = mujoco.MjvCamera()
@@ -205,8 +211,8 @@ def main() -> int:
     ee_actual_log = []
 
     for f in range(n_frames):
-        data.qpos[:] = joint_target[f]
-        data.qvel[:] = 0
+        ctrl.set_joint_target(joint_target[f])
+        ctrl.update(model, data)
         mujoco.mj_forward(model, data)
         ee_actual = data.xpos[ee_body] + data.xmat[ee_body].reshape(3, 3) @ tool_offset
         ee_actual_log.append(ee_actual.copy())

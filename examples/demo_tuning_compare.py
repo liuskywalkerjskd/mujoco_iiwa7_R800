@@ -16,6 +16,11 @@ os.environ.setdefault("MUJOCO_GL", "egl")
 import sys
 from pathlib import Path
 
+
+# Unified controller — one class drives all demos.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from iiwa7_controller import IiwaEEController
 import numpy as np
 import mujoco
 import imageio.v2 as imageio
@@ -128,6 +133,8 @@ def run_actuated(scene_path: Path, label: str, out_mp4: Path):
     joint_target, ref_path, ee_body, tool_offset = precompute_trajectory(model)
 
     mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
+    # pd_only for legacy; unified API for consistency
+    ctrl = IiwaEEController(model, data, mode="pd_only")
     renderer = mujoco.Renderer(model, height=HEIGHT, width=WIDTH)
     camera = mujoco.MjvCamera()
     camera.azimuth = 145.0; camera.elevation = -28.0
@@ -140,8 +147,9 @@ def run_actuated(scene_path: Path, label: str, out_mp4: Path):
     errs = []
     n_frames = len(joint_target)
     for f in range(n_frames):
-        data.ctrl[:] = joint_target[f]
+        ctrl.set_joint_target(joint_target[f])
         for _ in range(sim_steps_per_frame):
+            ctrl.update(model, data)
             mujoco.mj_step(model, data)
         ee_now = data.xpos[ee_body] + data.xmat[ee_body].reshape(3,3) @ tool_offset
         if ref_path[f] is not None:

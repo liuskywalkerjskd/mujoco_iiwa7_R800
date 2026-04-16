@@ -19,6 +19,11 @@ os.environ.setdefault("MUJOCO_GL", "egl")
 import sys
 from pathlib import Path
 
+
+# Unified controller — one class drives all demos.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from iiwa7_controller import IiwaEEController
 import numpy as np
 import mujoco
 import imageio.v2 as imageio
@@ -54,6 +59,7 @@ def main() -> int:
     ready_q = model.key_qpos[ready_id].copy()
 
     mujoco.mj_resetDataKeyframe(model, data, home_id)
+    ctrl = IiwaEEController(model, data, mode="pd_only")
 
     renderer = mujoco.Renderer(model, height=HEIGHT, width=WIDTH)
     camera = mujoco.MjvCamera()
@@ -87,10 +93,10 @@ def main() -> int:
             offset[5] = 0.5 * np.sin(w * phase + 1.5)
             target = ready_q + offset
 
-        data.ctrl[:] = target
+        ctrl.set_joint_target(target)
         for _ in range(sim_steps_per_frame):
+            ctrl.update(model, data)
             mujoco.mj_step(model, data)
-
         renderer.update_scene(data, camera=camera)
         frames.append(renderer.render())
 

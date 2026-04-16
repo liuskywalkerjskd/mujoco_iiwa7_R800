@@ -18,6 +18,11 @@ os.environ.setdefault("MUJOCO_GL", "egl")
 import sys
 from pathlib import Path
 
+
+# Unified controller — one class drives all demos.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from iiwa7_controller import IiwaEEController
 import numpy as np
 import mujoco
 import imageio.v2 as imageio
@@ -368,8 +373,6 @@ def run(scene_path: Path, wps, t_total: float, out_mp4: Path,
     print(f"\n=== {label}: {scene_path.name} -> {out_mp4.name} ===")
     model = mujoco.MjModel.from_xml_path(str(scene_path))
     data = mujoco.MjData(model)
-    scratch = mujoco.MjData(model)
-
     times, q_frames, ref_ee, tags_per_frame, ee_body = precompute_q(model, wps, t_total)
     n_frames = len(times)
 
@@ -378,6 +381,8 @@ def run(scene_path: Path, wps, t_total: float, out_mp4: Path,
     splines_qdd = [sp.derivative(2) for sp in splines_q]
 
     mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
+    ctrl = IiwaEEController(model, data, mode="full_id_ff_current", kp_tsk=KP_TSK, kd_tsk=KD_TSK)
+    ctrl = IiwaEEController(model, data, mode="full_id_ff_current", kp_tsk=KP_TSK, kd_tsk=KD_TSK)
     renderer = mujoco.Renderer(model, height=HEIGHT, width=WIDTH)
     cam = mujoco.MjvCamera()
     if camera_cfg is None:
@@ -397,18 +402,10 @@ def run(scene_path: Path, wps, t_total: float, out_mp4: Path,
     for f in range(n_frames):
         for s in range(sps):
             t_sim = times[f] + s * dt
-            q_d   = np.array([sp(t_sim) for sp in splines_q])
-            qd_d  = np.array([sp(t_sim) for sp in splines_qd])
-            qdd_d = np.array([sp(t_sim) for sp in splines_qdd])
-            qdd_cmd = qdd_d + KP_TSK*(q_d - data.qpos) + KD_TSK*(qd_d - data.qvel)
-            scratch.qpos[:] = data.qpos
-            scratch.qvel[:] = data.qvel
-            scratch.qacc[:] = qdd_cmd
-            mujoco.mj_inverse(model, scratch)
-            data.ctrl[:] = q_d
-            data.qfrc_applied[:] = scratch.qfrc_inverse
+            q_d = np.array([sp(t_sim) for sp in splines_q])
+            ctrl.set_joint_target(q_d)
+            ctrl.update(model, data)
             mujoco.mj_step(model, data)
-
         ee_now = data.xpos[ee_body] + data.xmat[ee_body].reshape(3,3) @ TOOL_OFFSET
         if ref_ee[f] is not None:
             errs.append(np.linalg.norm(ref_ee[f] - ee_now))

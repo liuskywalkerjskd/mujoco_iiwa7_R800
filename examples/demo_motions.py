@@ -23,6 +23,11 @@ os.environ.setdefault("MUJOCO_GL", "egl")
 
 import sys
 from pathlib import Path
+
+# Unified controller — one class drives all demos.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from iiwa7_controller import IiwaEEController
 from typing import Callable
 
 import numpy as np
@@ -263,8 +268,6 @@ def run(scene_path: Path, wp, t_total: float, out_mp4: Path,
     print(f"\n=== {label}: {scene_path.name} -> {out_mp4.name} ===")
     model = mujoco.MjModel.from_xml_path(str(scene_path))
     data  = mujoco.MjData(model)
-    scratch = mujoco.MjData(model)
-
     times, q_frames, ref_ee, grab_flags, ee_body = precompute_joint_targets(model, wp, t_total)
     n_frames = len(times)
 
@@ -273,6 +276,7 @@ def run(scene_path: Path, wp, t_total: float, out_mp4: Path,
     splines_qdd = [sp.derivative(2) for sp in splines_q]
 
     mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
+    ctrl = IiwaEEController(model, data, mode="full_id_ff_current", kp_tsk=KP_TSK, kd_tsk=KD_TSK)
     renderer = mujoco.Renderer(model, height=HEIGHT, width=WIDTH)
     cam = mujoco.MjvCamera()
     cam.azimuth = 125.0; cam.elevation = -22.0
@@ -295,19 +299,9 @@ def run(scene_path: Path, wp, t_total: float, out_mp4: Path,
         for s in range(sim_steps_per_frame):
             t_sim = times[f] + s * dt
             q_d = np.array([sp(t_sim) for sp in splines_q])
-            qd_d = np.array([sp(t_sim) for sp in splines_qd])
-            qdd_d = np.array([sp(t_sim) for sp in splines_qdd])
-
-            qdd_cmd = qdd_d + KP_TSK*(q_d - data.qpos) + KD_TSK*(qd_d - data.qvel)
-            scratch.qpos[:] = data.qpos
-            scratch.qvel[:] = data.qvel
-            scratch.qacc[:] = qdd_cmd
-            mujoco.mj_inverse(model, scratch)
-
-            data.ctrl[:] = q_d
-            data.qfrc_applied[:] = scratch.qfrc_inverse
+            ctrl.set_joint_target(q_d)
+            ctrl.update(model, data)
             mujoco.mj_step(model, data)
-
         # mocap cube: stick to EE during grab phase
         if has_mocap_cube and grab_flags[f]:
             ee_pos = data.xpos[ee_body] + data.xmat[ee_body].reshape(3,3) @ IK_TOOL_OFFSET

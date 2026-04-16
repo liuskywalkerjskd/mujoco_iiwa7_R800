@@ -28,6 +28,5 @@ improvement: mean 4.3x, max 5.3x
 
 ### Update (full ID FF added)
 
-| **tuned + full ID FF (mj_inverse)** | **8.72** | **12.55** | **17.91** |
-| **tuned + current-state ID FF + task-PD** | **5.48** | **9.63** | **12.28** |
+| **tuned + full ID FF (mj_inverse)** | **8.71** | **12.53** | **17.87** |
 
