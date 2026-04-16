@@ -29,7 +29,7 @@ MUJOCO_GL=egl python3 examples/demo_current_state_ff.py
 # -> media/videos/demo_square_current_state_ff.mp4
 ```
 
-Minimal Python API:
+Minimal Python API (joint-space):
 
 ```python
 import mujoco, numpy as np
@@ -40,6 +40,61 @@ d.ctrl[:] = np.array([0, 0.5, 0, -1.2, 0, 0.8, 0])
 for _ in range(2000):
     mujoco.mj_step(m, d)
 ```
+
+## Cartesian (end-effector) control
+
+For pose-space control use `IiwaEEController` from `iiwa7_controller/`.
+The high-level interface takes a **7-vector pose in the robot base
+frame** and runs damped-least-squares IK internally:
+
+```
+pose7 = [x, y, z, qx, qy, qz, qw]
+         └── position ──┘  └─── orientation ───┘
+         metres, base     quaternion (xyzw, ROS / scipy / Eigen order)
+         frame origin     identity = EE axes aligned with base axes
+```
+
+- Frame: **base_link (`iiwa_link_0`)**; translation in metres; rotation
+  as a unit quaternion in **`(qx, qy, qz, qw)`** order (same as ROS /
+  `scipy.spatial.transform.Rotation.as_quat()` / Eigen). The controller
+  re-orders to MuJoCo's internal `(w, x, y, z)` on your behalf.
+- The effective EE point is `iiwa_link_7` plus a 5 cm tool offset along
+  link 7's local +Z (`attachment_site` in the MJCF). Pass a different
+  `tool_offset=np.array([...])` to the constructor to change it.
+- Useful reference quaternions (xyzw):
+  - identity (EE axes = base axes): `[0, 0, 0, 1]`
+  - tool pointing down (180° about base X): `[1, 0, 0, 0]`
+
+```python
+import mujoco, numpy as np
+from iiwa7_controller import IiwaEEController
+
+m = mujoco.MjModel.from_xml_path("examples/scenes/iiwa7_scene.xml")
+d = mujoco.MjData(m)
+mujoco.mj_resetDataKeyframe(m, d, m.key("home").id)
+
+ctrl = IiwaEEController(m, d)   # default: current-state ID FF + task-PD
+
+# command: EE at (0.5, 0.0, 0.55) m in base frame, tool pointing down
+pose7 = np.array([0.5, 0.0, 0.55,   1.0, 0.0, 0.0, 0.0])  # xyzw = 180° about X
+ctrl.set_ee_pose(pose7)          # solves IK, updates internal q_target
+
+for _ in range(int(1.0 / m.opt.timestep)):   # run 1 s of sim
+    ctrl.update(m, d)             # writes data.ctrl and data.qfrc_applied
+    mujoco.mj_step(m, d)
+```
+
+Alternate entry points on the same controller:
+
+| method                          | input                                   | notes                                                  |
+|---------------------------------|-----------------------------------------|--------------------------------------------------------|
+| `set_ee_pose(pose7)`            | `[x,y,z,qx,qy,qz,qw]` in base frame     | recommended — matches ROS / real-robot conventions     |
+| `set_ee_target(pos, quat=None)` | world-frame pos (3,), optional wxyz (4) | lower-level; pass `quat=None` for 3-DOF position-only  |
+| `set_joint_target(q)`           | `(7,)` joint vector                     | bypass IK entirely                                     |
+
+Full working example: `examples/demo_ee_control.py`
+(dynamic 6-DOF Lissajous) and `examples/demo_ee_orientation_cycle.py`
+(fixed position, cycling tool orientation).
 
 ## Repository layout
 
