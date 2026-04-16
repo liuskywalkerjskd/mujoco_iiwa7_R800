@@ -25,3 +25,9 @@ improvement: mean 4.3x, max 5.3x
 | attachment_site | none | on link7 at (0,0,0.05) | same | standard tool mount point |
 | default classes | none | iiwa/joint1..7 classes | same | dedupe joint/actuator config |
 | inertial values | URDF iiwa7 (masses 3.45/3.48/4.06...) | URDF iiwa7 (unchanged) | menagerie iiwa14 (5.76/6.35/3.5...) | iiwa7 ≠ iiwa14 — do not copy |
+
+### Update (full ID FF added)
+
+| **tuned + full ID FF (mj_inverse)** | **8.72** | **12.55** | **17.91** |
+| **tuned + current-state ID FF + task-PD** | **5.48** | **9.63** | **12.28** |
+

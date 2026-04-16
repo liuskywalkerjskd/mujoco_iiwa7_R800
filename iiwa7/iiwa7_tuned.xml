@@ -66,9 +66,9 @@
   </default>
 
   <asset>
-    <!-- Materials (Drake PR #36 official iiwa7 scheme) -->
-    <material name="iiwa_grey"   rgba="0.2 0.2 0.2 1" specular="0.5" shininess="0.25"/>
-    <material name="iiwa_orange" rgba="1.0 0.15 0 1" specular="0.5" shininess="0.25"/>
+    <!-- Materials (iiwa_stack URDF original color values) -->
+    <material name="iiwa_grey"   rgba="0.4 0.4 0.4 1" specular="0.5" shininess="0.25"/>
+    <material name="iiwa_orange" rgba="1.0 0.423529 0.0392157 1" specular="0.5" shininess="0.25"/>
 
     <!-- Visual meshes: iiwa7 STL split by mesh-surface classification -->
     <mesh name="link_0_vis"        file="iiwa7_split/link_0.obj"/>
