@@ -55,7 +55,10 @@
   </actuator>
 
   <keyframe>
+    <!-- J4 has ref=+1.5708 and J6 has ref=-1.5708 in iiwa7.xml, so qpos=0
+         already corresponds to the experimental home pose (J4=+90°,
+         J6=-90°). Keep qpos/ctrl at zero here — using 1.5708 would drive
+         the arm to the physically-vertical (all-zeros) configuration. -->
     <key name="home" qpos="0 0 0 0 0 0 0" ctrl="0 0 0 0 0 0 0"/>
-    <key name="ready" qpos="0 0 0 1.5708 0 -1.5708 0" ctrl="0 0 0 1.5708 0 -1.5708 0"/>
   </keyframe>
 </mujoco>

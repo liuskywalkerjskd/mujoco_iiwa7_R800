@@ -90,8 +90,8 @@ def ik_dls(model, data, body_id, target, q0, tool_offset,
 def precompute_q_at_frames(model):
     ee = model.body("iiwa_link_7").id
     tool = np.array([0.0, 0.0, 0.05])
-    home_q = model.key_qpos[model.key("ready").id].copy()  # start at ready (no home ramp)
-    ready_q = model.key_qpos[model.key("ready").id].copy()
+    home_q = model.key_qpos[model.key("home").id].copy()  # start at ready (no home ramp)
+    ready_q = model.key_qpos[model.key("home").id].copy()
 
     n = int(TOTAL_S * FPS)
     jt = np.zeros((n, model.nq))
@@ -149,7 +149,7 @@ def main():
         qdd = np.array([sp(t) for sp in splines_qdd])
         return q, qd, qdd
 
-    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
     mode = "full_id_ff_current" if USE_TASK_PD else "full_id_ff_ref"
     ctrl = IiwaEEController(model, data, mode=mode, kp_tsk=KP_TSK, kd_tsk=KD_TSK)
     renderer = mujoco.Renderer(model, height=HEIGHT, width=WIDTH)

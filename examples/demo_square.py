@@ -117,9 +117,8 @@ def main() -> int:
     data = mujoco.MjData(model)
 
     home_id = model.key("home").id
-    ready_id = model.key("ready").id
-    home_q = model.key_qpos[ready_id].copy()  # start at ready (no home ramp)
-    ready_q = model.key_qpos[ready_id].copy()
+    home_q = model.key_qpos[home_id].copy()  # start at ready (no home ramp)
+    ready_q = model.key_qpos[home_id].copy()
 
     ee_body = model.body("iiwa_link_7").id
     tool_offset = np.array([0.0, 0.0, 0.05])  # 5 cm along link_7 local Z

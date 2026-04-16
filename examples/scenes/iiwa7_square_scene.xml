@@ -76,7 +76,8 @@
   </actuator>
 
   <keyframe>
-    <key name="home"  qpos="0 0 0 0 0 0 0" ctrl="0 0 0 0 0 0 0"/>
-    <key name="ready" qpos="0 0 0 1.5708 0 -1.5708 0" ctrl="0 0 0 1.5708 0 -1.5708 0"/>
+    <!-- Same rationale as iiwa7_scene.xml: J4/J6 use ref=±1.5708, so
+         qpos=0 is already the real-robot home pose. -->
+    <key name="home" qpos="0 0 0 0 0 0 0" ctrl="0 0 0 0 0 0 0"/>
   </keyframe>
 </mujoco>

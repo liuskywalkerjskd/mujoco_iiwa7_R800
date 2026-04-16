@@ -101,7 +101,7 @@ def main() -> int:
     print(f"loading {SCENE.name}")
     model = mujoco.MjModel.from_xml_path(str(SCENE))
     data = mujoco.MjData(model)
-    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
     mujoco.mj_forward(model, data)
 
     # Figure out the current EE position to ramp from

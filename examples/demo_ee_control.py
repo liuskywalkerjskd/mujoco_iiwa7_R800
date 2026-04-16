@@ -82,7 +82,7 @@ def main() -> int:
     print(f"loading {SCENE.name}")
     model = mujoco.MjModel.from_xml_path(str(SCENE))
     data = mujoco.MjData(model)
-    mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
+    mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
 
     # === one-line controller init, seven-vector pose interface ===
     ctrl = IiwaEEController(model, data)

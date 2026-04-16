@@ -54,11 +54,10 @@ def main() -> int:
     data = mujoco.MjData(model)
 
     home_id = model.key("home").id
-    ready_id = model.key("ready").id
-    home_q = model.key_qpos[ready_id].copy()  # start at ready (no home ramp)
-    ready_q = model.key_qpos[ready_id].copy()
+    home_q = model.key_qpos[home_id].copy()  # start at ready (no home ramp)
+    ready_q = model.key_qpos[home_id].copy()
 
-    mujoco.mj_resetDataKeyframe(model, data, ready_id)
+    mujoco.mj_resetDataKeyframe(model, data, home_id)
     ctrl = IiwaEEController(model, data, mode="pd_only")
 
     renderer = mujoco.Renderer(model, height=HEIGHT, width=WIDTH)
