@@ -39,10 +39,11 @@
   </asset>
 
   <worldbody>
-    <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_grey" mesh="link_0_vis"/>
-    <geom type="mesh" group="3" mesh="link_0_col"/>
+    <body name="iiwa_link_0">
+      <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_grey" mesh="link_0_vis"/>
+      <geom type="mesh" group="3" mesh="link_0_col"/>
 
-    <body name="iiwa_link_1" pos="0 0 0.15">
+      <body name="iiwa_link_1" pos="0 0 0.15">
       <inertial pos="0 -0.03 0.12" quat="0.428904 0.562175 -0.562175 0.428904"
                 mass="3.4525" diaginertia="0.0218946 0.02183 0.00663837"/>
       <joint name="iiwa_joint_1" pos="0 0 0" axis="0 0 1" range="-2.96706 2.96706" damping="0.5"/>
@@ -99,6 +100,7 @@
           </body>
         </body>
       </body>
+    </body>
     </body>
   </worldbody>
 </mujoco>

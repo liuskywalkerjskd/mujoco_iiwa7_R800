@@ -6,10 +6,10 @@ Cross-referenced against [mujoco_menagerie/kuka_iiwa_14](https://github.com/goog
 
 | model                            | mean (mm) | p95 (mm) | max (mm) |
 |---                                |---        |---       |---       |
-| legacy (position, kp=400/200/100) |   94.80 | 156.06 | 169.07 |
-| **tuned (general, kp=2000 kd=200)**| **22.28** | **30.37** | **31.90** |
+| legacy (position, kp=400/200/100) |   96.12 | 161.44 | 172.72 |
+| **tuned (general, kp=2000 kd=200)**| **21.56** | **31.07** | **31.41** |
 
-improvement: mean 4.3x, max 5.3x
+improvement: mean 4.5x, max 5.5x
 
 ## Parameter diff adopted from menagerie
 
@@ -25,8 +25,3 @@ improvement: mean 4.3x, max 5.3x
 | attachment_site | none | on link7 at (0,0,0.05) | same | standard tool mount point |
 | default classes | none | iiwa/joint1..7 classes | same | dedupe joint/actuator config |
 | inertial values | URDF iiwa7 (masses 3.45/3.48/4.06...) | URDF iiwa7 (unchanged) | menagerie iiwa14 (5.76/6.35/3.5...) | iiwa7 ≠ iiwa14 — do not copy |
-
-### Update (full ID FF added)
-
-| **tuned + full ID FF (mj_inverse)** | **8.71** | **12.53** | **17.87** |
-
