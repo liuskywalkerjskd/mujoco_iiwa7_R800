@@ -31,7 +31,7 @@ import imageio.v2 as imageio
 
 HERE = Path(__file__).resolve().parent
 MJCF = HERE / "iiwa7" / "iiwa7_square_scene.xml"
-OUT = HERE / "iiwa7" / "demo_square.mp4"
+OUT = HERE / "media" / "videos" / "demo_square.mp4"
 
 WIDTH, HEIGHT = 720, 540
 FPS = 30

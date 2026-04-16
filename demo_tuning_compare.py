@@ -4,8 +4,8 @@ general actuator kp=2000 kd=200) — both driving the same square trajectory
 under full actuator-in-loop dynamics.
 
 Outputs:
-  iiwa7/demo_square_actuated_legacy.mp4
-  iiwa7/demo_square_actuated_tuned.mp4
+  media/videos/demo_square_actuated_legacy.mp4
+  media/videos/demo_square_actuated_tuned.mp4
   TUNING_REPORT.md  (summary table with mean/max EE tracking error)
 """
 from __future__ import annotations
@@ -154,6 +154,7 @@ def run_actuated(scene_path: Path, label: str, out_mp4: Path):
           f"max={errs.max():.2f} mm  p95={np.percentile(errs, 95):.2f} mm  "
           f"({len(errs)} frames)")
 
+    out_mp4.parent.mkdir(parents=True, exist_ok=True)
     imageio.mimwrite(str(out_mp4), frames, fps=FPS, quality=7, macro_block_size=1)
     print(f"  wrote {out_mp4} ({out_mp4.stat().st_size/1024:.1f} KiB)")
 
@@ -161,8 +162,8 @@ def run_actuated(scene_path: Path, label: str, out_mp4: Path):
 
 
 def main():
-    legacy_out = HERE / "iiwa7" / "demo_square_actuated_legacy.mp4"
-    tuned_out  = HERE / "iiwa7" / "demo_square_actuated_tuned.mp4"
+    legacy_out = HERE / "media" / "videos" / "demo_square_actuated_legacy.mp4"
+    tuned_out  = HERE / "media" / "videos" / "demo_square_actuated_tuned.mp4"
 
     lm, lx, l95 = run_actuated(LEGACY_SCENE, "legacy (position, kp=400/200/100)", legacy_out)
     tm, tx, t95 = run_actuated(TUNED_SCENE,  "tuned (general, kp=2000 kd=200)",    tuned_out)

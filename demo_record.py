@@ -8,7 +8,7 @@ Trajectory (total 10 s at 30 fps):
                   motion + dynamics-consistent damping
 
 Writes:
-  mjcf/iiwa7/demo.mp4
+  media/videos/demo.mp4
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ import imageio.v2 as imageio
 
 HERE = Path(__file__).resolve().parent
 MJCF = HERE / "iiwa7" / "iiwa7_scene.xml"
-OUT = HERE / "iiwa7" / "demo.mp4"
+OUT = HERE / "media" / "videos" / "demo.mp4"
 
 WIDTH, HEIGHT = 640, 480
 FPS = 30
