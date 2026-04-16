@@ -6,10 +6,10 @@ Cross-referenced against [mujoco_menagerie/kuka_iiwa_14](https://github.com/goog
 
 | model                            | mean (mm) | p95 (mm) | max (mm) |
 |---                                |---        |---       |---       |
-| legacy (position, kp=400/200/100) |   96.12 | 161.44 | 172.72 |
-| **tuned (general, kp=2000 kd=200)**| **21.56** | **31.07** | **31.41** |
+| legacy (position, kp=400/200/100) |   87.65 | 151.47 | 177.80 |
+| **tuned (general, kp=2000 kd=200)**| **22.14** | **32.94** | **48.59** |
 
-improvement: mean 4.5x, max 5.5x
+improvement: mean 4.0x, max 3.7x
 
 ## Parameter diff adopted from menagerie
 

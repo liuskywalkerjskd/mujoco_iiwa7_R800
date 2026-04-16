@@ -68,7 +68,7 @@
           <body name="iiwa_link_4" pos="0 0 0.19" quat="0.707107 0.707107 0 0">
             <inertial pos="0 0.067 0.034" quat="0.991887 -0.127124 0 0"
                       mass="3.4822" diaginertia="0.02178 0.0216947 0.00684029"/>
-            <joint name="iiwa_joint_4" pos="0 0 0" axis="0 0 1" range="-2.0944 2.0944" ref="-1.5708" damping="0.5"/>
+            <joint name="iiwa_joint_4" pos="0 0 0" axis="0 0 1" range="-2.0944 2.0944" ref="1.5708" damping="0.5"/>
             <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_orange" mesh="link_4_orange_vis"/>
             <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_grey"   mesh="link_4_grey_vis"/>
             <geom type="mesh" group="3" mesh="link_4_col"/>
@@ -83,7 +83,7 @@
               <body name="iiwa_link_6" pos="0 0.0607 0.19" quat="0.707107 0.707107 0 0">
                 <inertial pos="0 0.0006 0.0004" quat="0.996112 0.088097 0 0"
                           mass="2.3466" diaginertia="0.006509 0.00631585 0.00447015"/>
-                <joint name="iiwa_joint_6" pos="0 0 0" axis="0 0 1" range="-2.0944 2.0944" ref="1.5708" damping="0.5"/>
+                <joint name="iiwa_joint_6" pos="0 0 0" axis="0 0 1" range="-2.0944 2.0944" ref="-1.5708" damping="0.5"/>
                 <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_orange" mesh="link_6_orange_vis"/>
                 <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_grey"   mesh="link_6_grey_vis"/>
                 <geom type="mesh" group="3" mesh="link_6_col"/>

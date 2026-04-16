@@ -41,7 +41,7 @@
         <general ctrlrange="-2.96706 2.96706" forcerange="-110 110"/>
       </default>
       <default class="joint4_mid">
-        <joint range="-2.09440 2.09440" ref="-1.5708"/>
+        <joint range="-2.09440 2.09440" ref="1.5708"/>
         <general ctrlrange="-2.09440 2.09440" forcerange="-110 110"/>
       </default>
       <default class="joint5_mid">
@@ -49,7 +49,7 @@
         <general ctrlrange="-2.96706 2.96706" forcerange="-110 110"/>
       </default>
       <default class="joint6_distal">
-        <joint range="-2.09440 2.09440" ref="1.5708"/>
+        <joint range="-2.09440 2.09440" ref="-1.5708"/>
         <general ctrlrange="-2.09440 2.09440" forcerange="-40 40"/>
       </default>
       <default class="joint7_distal">
@@ -183,6 +183,6 @@
 
   <keyframe>
     <key name="home"  qpos="0 0 0 0 0 0 0"            ctrl="0 0 0 0 0 0 0"/>
-    <key name="ready" qpos="0 0 0 -1.5708 0 1.5708 0"    ctrl="0 0 0 -1.5708 0 1.5708 0"/>
+    <key name="ready" qpos="0 0 0 1.5708 0 -1.5708 0"    ctrl="0 0 0 1.5708 0 -1.5708 0"/>
   </keyframe>
 </mujoco>
