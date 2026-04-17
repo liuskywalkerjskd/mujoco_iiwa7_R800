@@ -3,8 +3,9 @@
 MuJoCo (MJCF) model for the KUKA LBR iiwa 7 R800, converted from the
 ROS `iiwa_stack` URDF and tuned to `mujoco_menagerie/kuka_iiwa_14`
 engineering conventions. Ships with a suite of motion-control demos
-(gravity / inverse-dynamics feedforward + task-space PD) and a
-unified end-effector controller class.
+(gravity / inverse-dynamics feedforward + task-space PD), a unified
+end-effector controller class, and a **Robotiq 2F-85 gripper** mounted
+on the flange with a full real-physics pick-and-place demo.
 
 ## Installation
 
@@ -96,6 +97,120 @@ Full working example: `examples/demo_ee_control.py`
 (dynamic 6-DOF Lissajous) and `examples/demo_ee_orientation_cycle.py`
 (fixed position, cycling tool orientation).
 
+## Robotiq 2F-85 gripper
+
+The repo ships a MuJoCo port of the Robotiq 2F-85 parallel gripper
+(meshes converted from
+[Danfoa/robotiq_2finger_grippers](https://github.com/Danfoa/robotiq_2finger_grippers))
+mounted directly on the iiwa7 flange via the existing `attachment_site`
+inside `iiwa_link_7`.
+
+```
+iiwa7_mjcf/
+├── robotiq_2f85.xml             standalone gripper MJCF (testable alone)
+├── iiwa7_with_gripper.xml       composite arm + gripper MJCF
+└── meshes_2f85/                 6 OBJ (visual) + 5 STL (collision)
+tools/convert_robotiq_meshes.py  DAE → OBJ/STL converter (reproducible)
+examples/scenes/
+├── iiwa7_with_gripper_scene.xml            minimal viewer scene
+└── iiwa7_pickplace_gripper_scene.xml       pick-and-place scene + cube
+```
+
+### Kinematics
+
+The real 2F-85 four-bar linkage is modelled with **one driver joint +
+five equality-constraint followers**, faithfully reproducing the URDF
+mimic structure:
+
+| Joint                             | Relation to driver          | Range (rad)      |
+|-----------------------------------|-----------------------------|------------------|
+| `2f85_finger_joint` *(driver)*    | —                           | `[0, 0.8]`       |
+| `right_outer_knuckle_joint`       | `= +finger_joint`           | `[0, 0.8]`       |
+| `left_inner_knuckle_joint`        | `= +finger_joint`           | `[0, 0.8757]`    |
+| `right_inner_knuckle_joint`       | `= +finger_joint`           | `[0, 0.8757]`    |
+| `left_inner_finger_joint`         | `= −finger_joint`           | `[−0.8757, 0]`   |
+| `right_inner_finger_joint`        | `= −finger_joint`           | `[−0.8757, 0]`   |
+
+Measured pad-to-pad gap: **92 mm (open)** → **8 mm (closed)** — matches
+the 85 mm stroke on the datasheet.
+
+### Split control channels (matches the real robot)
+
+Arm and gripper actuators live in **two separate `<actuator>` blocks**
+inside `iiwa7_with_gripper.xml`. MuJoCo merges them at compile time,
+but the source-level split mirrors the physical split channels (KUKA
+FRI vs Robotiq Modbus RTU) so the architecture is explicit:
+
+| `data.ctrl` index | Joint                 | Forwarded to (real system) |
+|-------------------|-----------------------|----------------------------|
+| `ctrl[0..6]`      | `iiwa_joint_1..7`     | KUKA FRI / KRC torque loop |
+| `ctrl[7]`         | `2f85_finger_joint`   | Robotiq 2F-85 Modbus RTU    |
+
+`ctrl[7] ∈ [0, 0.8]` rad: `0 = open` (85 mm), `0.8 = closed`.
+
+### Pick-and-place task example
+
+[![pick-and-place demo](media/thumbnails/pickplace_gripper.jpg)](media/videos/pickplace_gripper.mp4)
+
+*Left → right: grasp on the blue pad, lift & transit, descend to the orange place pad.*
+
+Headless render (writes `media/videos/pickplace_gripper.mp4`):
+
+```bash
+MUJOCO_GL=egl python3 examples/demo_pickplace_gripper.py
+```
+
+The demo scripts a 12-second trajectory that moves a 40 mm / 60 g cube
+from one floor pad to another:
+
+```
+home → pre-grasp → descend → close → lift → transit → place → release → retreat
+```
+
+Minimal Python pattern — **two commands per sim step**, one for the
+arm (Cartesian pose) and one for the gripper (single setpoint):
+
+```python
+import mujoco, numpy as np
+from iiwa7_controller import IiwaEEController
+
+m = mujoco.MjModel.from_xml_path(
+    "examples/scenes/iiwa7_pickplace_gripper_scene.xml")
+d = mujoco.MjData(m)
+mujoco.mj_resetDataKeyframe(m, d, m.key("home").id)
+
+# tool_offset points from link_7 origin to the pad midpoint (the TCP)
+ctrl = IiwaEEController(
+    m, d, mode="gravity_ff", tool_offset=np.array([0., 0., 0.194]))
+
+# Command #1: Cartesian pose for the arm (TCP at cube, tool down)
+pose7 = np.array([0.50, -0.20, 0.02,   0.0, 1.0, 0.0, 0.0])  # xyzw, 180° about Y
+ctrl.set_ee_pose(pose7)
+
+# Command #2: gripper setpoint, independent of the arm channel
+GRIPPER_OPEN, GRIPPER_CLOSE_CUBE = 0.0, 0.55
+
+for _ in range(int(0.5 / m.opt.timestep)):
+    ctrl.update(m, d)                # writes ctrl[0..6] (arm) + feedforward
+    d.ctrl[7] = GRIPPER_CLOSE_CUBE   # overwrite the gripper slot every step
+    mujoco.mj_step(m, d)
+```
+
+Real-physics contact (freejoint cube, μ=1.4) — not mocap — produces:
+
+| Metric                   | Value          |
+|--------------------------|----------------|
+| XY displacement          | 399.8 / 400 mm |
+| Landing error vs target  | 0.3 mm         |
+| TCP-cube tracking (lift) | < 2 mm         |
+
+### Mounting onto a different arm
+
+`robotiq_2f85.xml` is self-contained — `<include>` it into your scene
+and place the `2f85_base` body at your tool frame. Default orientation
+has `+Z` pointing away from the flange toward the fingertips and
+`±Y` as the jaw open/close axis.
+
 ## Repository layout
 
 ```
@@ -104,13 +219,17 @@ iiwa7-mujoco/
 │   ├── iiwa7.xml                 base MJCF (auto-converted from URDF)
 │   ├── iiwa7_tuned.xml           menagerie-style tuned model
 │   ├── iiwa7.urdf                cleaned URDF (intermediate)
-│   └── meshes/                   collision STLs + split visual OBJs
+│   ├── meshes/                   arm collision STLs + split visual OBJs
+│   ├── robotiq_2f85.xml          standalone Robotiq 2F-85 gripper
+│   ├── iiwa7_with_gripper.xml    composite arm + gripper
+│   └── meshes_2f85/              gripper visual OBJ + collision STL
 ├── iiwa7_controller/           unified EE / joint controller
 ├── examples/
-│   ├── demo_*.py                 10 demos (see below)
+│   ├── demo_*.py                 demos (arm + gripper pick-and-place)
 │   └── scenes/                   scene wrappers
 ├── tools/
-│   └── convert_iiwa7_to_mjcf.py  URDF -> MJCF pipeline
+│   ├── convert_iiwa7_to_mjcf.py  URDF -> MJCF pipeline
+│   └── convert_robotiq_meshes.py DAE -> OBJ/STL for the gripper
 ├── media/                      thumbnails + recorded mp4s
 └── TUNING_REPORT.md            parameter diff + tracking benchmarks
 ```
@@ -222,3 +341,4 @@ square — and write their own MP4s to `media/videos/`.
 
 - URDF source: [IFL-CAMP/iiwa_stack](https://github.com/IFL-CAMP/iiwa_stack)
 - Tuning reference: [google-deepmind/mujoco_menagerie](https://github.com/google-deepmind/mujoco_menagerie) (`kuka_iiwa_14`)
+- Gripper source: [Danfoa/robotiq_2finger_grippers](https://github.com/Danfoa/robotiq_2finger_grippers) (`robotiq_2f_85_gripper_visualization`)
