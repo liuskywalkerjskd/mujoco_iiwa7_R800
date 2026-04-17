@@ -255,7 +255,9 @@ class IiwaEEController:
             mujoco.mj_jacBody(self.model, d, jp, jr, self.ee_body_id)
             JJT = jp @ jp.T + self.ik_damping ** 2 * np.eye(3)
             dq = jp.T @ np.linalg.solve(JJT, err)
-            d.qpos[: self.model.nq] += step * dq
+            # Use mj_integratePos so free / ball joints (where nq != nv) are
+            # advanced correctly instead of naive qpos += dq.
+            mujoco.mj_integratePos(self.model, d.qpos, dq, step)
             self._clamp_to_joint_limits(d.qpos)
         self._q_target = d.qpos[: self.model.nq].copy()
         return float(np.linalg.norm(err))
@@ -293,7 +295,8 @@ class IiwaEEController:
             J = np.vstack([jp, jr])
             err = np.concatenate([pos_err, ori_err])
             dq = J.T @ np.linalg.solve(J @ J.T + lam2, err)
-            d.qpos[: self.model.nq] += step * dq
+            # See note in _ik_pos_only: mj_integratePos handles free/ball joints.
+            mujoco.mj_integratePos(self.model, d.qpos, dq, step)
             self._clamp_to_joint_limits(d.qpos)
         self._q_target = d.qpos[: self.model.nq].copy()
         return float(max(np.linalg.norm(pos_err), np.linalg.norm(ori_err)))
