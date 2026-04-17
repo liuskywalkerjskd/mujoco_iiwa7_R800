@@ -336,19 +336,35 @@ task-space PD folded into commanded acceleration:
 All values in millimetres. See [`TUNING_REPORT.md`](TUNING_REPORT.md)
 for the raw logs.
 
-## Demo
+## Demo gallery
 
-Flagship: horizontal 30 × 30 cm square traced twice under the
-current-state ID FF + task-space PD controller (mean **5.48 mm**,
-max **12.28 mm**). Rendered headlessly via `MUJOCO_GL=egl`, H.264 MP4,
-720×540 @ 30 fps.
+Six representative motion demos running under the unified
+`IiwaEEController` (current-state ID FF + task-space PD). Rendered
+headlessly via `MUJOCO_GL=egl`, H.264 MP4, 720×540 @ 30 fps. Click the
+gallery to open the flagship square MP4; individual MP4s are listed
+beneath.
 
-[![current-state ID FF demo](media/thumbnails/demo_square_current_state_ff.jpg)](media/videos/demo_square_current_state_ff.mp4)
+[![demo gallery](media/thumbnails/demo_gallery.jpg)](media/videos/demo_square_current_state_ff.mp4)
 
-The remaining demo scripts (`demo_motions_v2.py`,
-`demo_ee_orientation_cycle.py`, etc.) cover additional trajectories
-— figure-8, spiral, obstacle arc, stacking, 6-DOF orientation-locked
-square — and write their own MP4s to `media/videos/`.
+*Top row, left → right:* horizontal 30 × 30 cm square (flagship, mean
+**5.48 mm** / max **12.28 mm**) · figure-8 · ascending spiral.
+*Bottom row, left → right:* vertical circle · 6-DOF orientation-locked
+square · obstacle arc around a cylinder.
+
+| Demo                             | Script                                   | Video                                                |
+|----------------------------------|------------------------------------------|------------------------------------------------------|
+| Horizontal square (flagship)     | `demo_current_state_ff.py`               | `media/videos/demo_square_current_state_ff.mp4`      |
+| Figure-8 / spiral / v-circle     | `demo_motions_v2.py`                     | `media/videos/demo_motion_{figure8,spiral,vcircle,vrect}.mp4` |
+| 6-DOF orientation-locked square  | `demo_motion_sq6dof` (in `demo_motions_v2.py`) | `media/videos/demo_motion_sq6dof.mp4`          |
+| Obstacle arc around a cylinder   | `demo_motion_obstacle` (in `demo_motions_v2.py`) | `media/videos/demo_motion_obstacle.mp4`      |
+| 3D Lissajous (6-DOF pose API)    | `demo_ee_control.py`                     | `media/videos/demo_ee_control.mp4`                   |
+| Tool orientation cycle           | `demo_ee_orientation_cycle.py`           | `media/videos/demo_ee_orientation_cycle.mp4`         |
+| **6-axis Cartesian probe (±X,±Y,±Z)** | `demo_cartesian_axes.py`            | `media/videos/demo_cartesian_axes.mp4`               |
+| **Gripper pick-and-place**       | `demo_pickplace_gripper.py`              | `media/videos/pickplace_gripper.mp4`                 |
+
+All demos target the same `IiwaEEController.set_ee_pose(pose7)` API —
+the controller is what stays constant; the trajectory is just a
+`(t → pose7)` function supplied by each script.
 
 ## Credits
 
