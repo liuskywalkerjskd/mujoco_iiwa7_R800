@@ -237,18 +237,24 @@ iiwa7-mujoco/
 ## Home-pose convention
 
 The `home` keyframe matches **real-robot habits**, not the URDF default
-vertical pose. On the physical iiwa we treat **J4 = +90°, J6 = -90°**
-(other joints at 0°) as home — arm bent forward, tool flange pointing
-roughly downward.
+vertical pose. On the physical iiwa, the teach-pendant reading at the
+"elbow-bent-forward, flange-pointing-down" ready pose is
+**J4 = −90°, J6 = +90°** (other joints at 0°).
+
+(Why the signs disagree with a naive "bend forward by 90°" intuition:
+the iiwa_stack URDF picks joint axes whose positive rotation direction
+matches the KRC pendant's convention for J6 but **opposes** it for J4.
+That mismatch is baked into the URDF; the ref trick below absorbs it
+so `qpos = 0` means the same physical pose in sim and on hardware.)
 
 To make the sim open in that pose out-of-the-box, `iiwa7_mjcf/iiwa7.xml`
-sets `ref=1.5708` on J4 and `ref=-1.5708` on J6. Per MuJoCo semantics
+sets `ref=+1.5708` on J4 and `ref=-1.5708` on J6. Per MuJoCo semantics
 the physical joint angle is `qpos - ref`, so:
 
-| qpos (J4, J6) | physical angle | visual pose          |
-|---------------|----------------|----------------------|
-| `(0, 0)`      | `(-90°, +90°)` | real-robot home      |
-| `(+90°, -90°)`| `(0°, 0°)`     | URDF fully-vertical  |
+| qpos (J4, J6)  | physical angle (= pendant reading) | visual pose              |
+|----------------|------------------------------------|--------------------------|
+| `(0, 0)`       | `(−90°, +90°)`                     | real-robot ready pose    |
+| `(+90°, −90°)` | `(0°, 0°)`                         | URDF fully-vertical pose |
 
 The keyframes are therefore all zeros:
 
@@ -256,9 +262,16 @@ The keyframes are therefore all zeros:
 <key name="home" qpos="0 0 0 0 0 0 0" ctrl="0 0 0 0 0 0 0"/>
 ```
 
-**Trade-off.** `data.qpos[3]` and `data.qpos[5]` differ from the real
-robot's J4 / J6 encoder readings by ±1.5708 rad. Add / subtract `ref`
-at the sim↔real boundary.
+**Sim ↔ real mapping is direct.** Thanks to the `ref` choice,
+`qpos[J4]` and `qpos[J6]` in sim are already displaced from the
+pendant reading by exactly `ref`, so:
+
+```
+pendant_reading_deg = rad2deg(qpos - ref)
+```
+
+and pendant = `qpos - ref`. No separate offset needs to be
+book-kept at the sim ↔ real boundary — just subtract `ref`.
 
 **Revert to vanilla URDF semantics** (`qpos` == encoder readings):
 
