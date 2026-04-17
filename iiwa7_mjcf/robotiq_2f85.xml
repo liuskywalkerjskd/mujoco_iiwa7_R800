@@ -1,0 +1,220 @@
+<mujoco model="robotiq_2f85">
+  <!--
+    Robotiq 2F-85 parallel gripper, converted from Danfoa/robotiq_2finger_grippers
+    (robotiq_2f_85_gripper_visualization package).
+
+    Kinematics (URDF mimic -> MuJoCo equality polycoef):
+      1 driver joint:   finger_joint                  (revolute, axis=+x, range [0, 0.8])
+      5 follower joints (constrained to driver):
+        right_outer_knuckle_joint  =  + finger_joint
+        left_inner_knuckle_joint   =  + finger_joint   (range [0, 0.8757])
+        right_inner_knuckle_joint  =  + finger_joint
+        left_inner_finger_joint    =  - finger_joint   (range [-0.8757, 0])
+        right_inner_finger_joint   =  - finger_joint
+
+    Mount frame: body "2f85_base" is the gripper's base_link (the face that
+    bolts to the robot flange). +Z points away from the flange toward the
+    fingertips; fingers open/close as finger_joint rotates.
+
+    This file is self-contained. Compile it alone to inspect the gripper
+    without the arm. It is re-used as a sub-tree inside iiwa7_with_gripper.xml,
+    but each file keeps its own copy of the assets so both stay independently
+    loadable.
+  -->
+
+  <compiler angle="radian" meshdir="meshes_2f85" autolimits="true"/>
+  <option integrator="implicitfast" timestep="0.002"/>
+
+  <default>
+    <default class="2f85">
+      <joint axis="1 0 0" damping="0.1" armature="0.001"/>
+      <default class="2f85/driver">
+        <joint range="0 0.8"/>
+      </default>
+      <default class="2f85/follower">
+        <joint range="0 0.8757"/>
+      </default>
+      <default class="2f85/spring_link">
+        <joint range="-0.8757 0"/>
+      </default>
+      <default class="2f85/visual">
+        <geom type="mesh" contype="0" conaffinity="0" group="2" density="0"/>
+      </default>
+      <default class="2f85/collision">
+        <geom type="mesh" group="3"/>
+      </default>
+      <default class="2f85/pad">
+        <geom type="box" size="0.011 0.003175 0.01875" friction="1.0 0.05 0.001"
+              solimp="0.95 0.99 0.001" solref="0.004 1"/>
+      </default>
+    </default>
+  </default>
+
+  <asset>
+    <material name="2f85_black" rgba="0.1 0.1 0.1 1"   specular="0.5" shininess="0.25"/>
+    <material name="2f85_light" rgba="0.79 0.82 0.93 1" specular="0.5" shininess="0.25"/>
+    <material name="2f85_pad"   rgba="0.9 0.9 0.9 1"   specular="0.2" shininess="0.1"/>
+
+    <mesh name="2f85_base_vis"            file="visual/robotiq_arg2f_85_base_link.obj"/>
+    <mesh name="2f85_outer_knuckle_vis"   file="visual/robotiq_arg2f_85_outer_knuckle.obj"/>
+    <mesh name="2f85_outer_finger_vis"    file="visual/robotiq_arg2f_85_outer_finger.obj"/>
+    <mesh name="2f85_inner_knuckle_vis"   file="visual/robotiq_arg2f_85_inner_knuckle.obj"/>
+    <mesh name="2f85_inner_finger_vis"    file="visual/robotiq_arg2f_85_inner_finger.obj"/>
+    <mesh name="2f85_pad_vis"             file="visual/robotiq_arg2f_85_pad.obj"/>
+
+    <mesh name="2f85_base_col"            file="collision/robotiq_arg2f_85_base_link.stl"/>
+    <mesh name="2f85_outer_knuckle_col"   file="collision/robotiq_arg2f_85_outer_knuckle.stl"/>
+    <mesh name="2f85_outer_finger_col"    file="collision/robotiq_arg2f_85_outer_finger.stl"/>
+    <mesh name="2f85_inner_knuckle_col"   file="collision/robotiq_arg2f_85_inner_knuckle.stl"/>
+    <mesh name="2f85_inner_finger_col"    file="collision/robotiq_arg2f_85_inner_finger.stl"/>
+  </asset>
+
+  <worldbody>
+    <body name="2f85_base" childclass="2f85">
+      <!-- base_link inertia from URDF -->
+      <inertial pos="0 0 0.03145" mass="0.22652"
+                diaginertia="0.00020005 0.00017832 0.00013478"/>
+      <geom class="2f85/visual"    material="2f85_black" mesh="2f85_base_vis"/>
+      <geom class="2f85/collision" mesh="2f85_base_col"/>
+
+      <!-- ========== LEFT side ========== -->
+      <body name="2f85_left_outer_knuckle" pos="0 -0.0306011 0.054904" quat="0 0 0 1">
+        <!-- URDF rpy (0, 0, pi) -> quat (w, x, y, z) = (0, 0, 0, 1) -->
+        <inertial pos="-0.0002 0.01994 0.02922" mass="0.00853"
+                  diaginertia="2.89e-06 1.87e-06 1.22e-06"/>
+        <joint name="2f85_finger_joint" class="2f85/driver"/>
+        <geom class="2f85/visual"    material="2f85_light" mesh="2f85_outer_knuckle_vis"/>
+        <geom class="2f85/collision" mesh="2f85_outer_knuckle_col"/>
+
+        <body name="2f85_left_outer_finger" pos="0 0.0315 -0.0041">
+          <inertial pos="0.0003 0.0374 -0.0208" mass="0.02261"
+                    diaginertia="1.53e-05 6.18e-06 1.16e-05"/>
+          <geom class="2f85/visual"    material="2f85_black" mesh="2f85_outer_finger_vis"/>
+          <geom class="2f85/collision" mesh="2f85_outer_finger_col"/>
+
+          <body name="2f85_left_inner_finger" pos="0 0.0061 0.0471">
+            <inertial pos="0.0003 0.0160 -0.0137" mass="0.01040"
+                      diaginertia="2.72e-06 7.69e-07 2.30e-06"/>
+            <joint name="2f85_left_inner_finger_joint" class="2f85/spring_link"/>
+            <geom class="2f85/visual"    material="2f85_black" mesh="2f85_inner_finger_vis"/>
+            <geom class="2f85/collision" mesh="2f85_inner_finger_col"/>
+
+            <body name="2f85_left_pad" pos="0 -0.022020 0.03242">
+              <inertial pos="0 0 0" mass="0.005" diaginertia="1e-6 1e-6 1e-6"/>
+              <geom class="2f85/pad" material="2f85_pad"
+                    contype="0" conaffinity="0" group="2" density="0"/>
+              <geom class="2f85/pad" group="3" rgba="0.9 0 0 0.3"/>
+            </body>
+          </body>
+        </body>
+      </body>
+
+      <body name="2f85_left_inner_knuckle" pos="0 -0.0127 0.06142" quat="0 0 0 1">
+        <inertial pos="0.0001 0.0508 0.0010" mass="0.02712"
+                  diaginertia="2.62e-05 2.83e-06 2.84e-05"/>
+        <joint name="2f85_left_inner_knuckle_joint" class="2f85/follower"/>
+        <geom class="2f85/visual"    material="2f85_black" mesh="2f85_inner_knuckle_vis"/>
+        <geom class="2f85/collision" mesh="2f85_inner_knuckle_col"/>
+      </body>
+
+      <!-- ========== RIGHT side ========== -->
+      <body name="2f85_right_outer_knuckle" pos="0 0.0306011 0.054904">
+        <inertial pos="-0.0002 0.01994 0.02922" mass="0.00853"
+                  diaginertia="2.89e-06 1.87e-06 1.22e-06"/>
+        <joint name="2f85_right_outer_knuckle_joint" class="2f85/driver"/>
+        <geom class="2f85/visual"    material="2f85_light" mesh="2f85_outer_knuckle_vis"/>
+        <geom class="2f85/collision" mesh="2f85_outer_knuckle_col"/>
+
+        <body name="2f85_right_outer_finger" pos="0 0.0315 -0.0041">
+          <inertial pos="0.0003 0.0374 -0.0208" mass="0.02261"
+                    diaginertia="1.53e-05 6.18e-06 1.16e-05"/>
+          <geom class="2f85/visual"    material="2f85_black" mesh="2f85_outer_finger_vis"/>
+          <geom class="2f85/collision" mesh="2f85_outer_finger_col"/>
+
+          <body name="2f85_right_inner_finger" pos="0 0.0061 0.0471">
+            <inertial pos="0.0003 0.0160 -0.0137" mass="0.01040"
+                      diaginertia="2.72e-06 7.69e-07 2.30e-06"/>
+            <joint name="2f85_right_inner_finger_joint" class="2f85/spring_link"/>
+            <geom class="2f85/visual"    material="2f85_black" mesh="2f85_inner_finger_vis"/>
+            <geom class="2f85/collision" mesh="2f85_inner_finger_col"/>
+
+            <body name="2f85_right_pad" pos="0 -0.022020 0.03242">
+              <inertial pos="0 0 0" mass="0.005" diaginertia="1e-6 1e-6 1e-6"/>
+              <geom class="2f85/pad" material="2f85_pad"
+                    contype="0" conaffinity="0" group="2" density="0"/>
+              <geom class="2f85/pad" group="3" rgba="0.9 0 0 0.3"/>
+            </body>
+          </body>
+        </body>
+      </body>
+
+      <body name="2f85_right_inner_knuckle" pos="0 0.0127 0.06142">
+        <inertial pos="0.0001 0.0508 0.0010" mass="0.02712"
+                  diaginertia="2.62e-05 2.83e-06 2.84e-05"/>
+        <joint name="2f85_right_inner_knuckle_joint" class="2f85/follower"/>
+        <geom class="2f85/visual"    material="2f85_black" mesh="2f85_inner_knuckle_vis"/>
+        <geom class="2f85/collision" mesh="2f85_inner_knuckle_col"/>
+      </body>
+
+      <!-- TCP: grasping reference at the pad midpoint (measured at grip-closed
+           configuration: pads at z=0.144m in base frame). -->
+      <site name="2f85_tcp" pos="0 0 0.144" size="0.005" rgba="0 1 0 1" group="4"/>
+    </body>
+  </worldbody>
+
+  <contact>
+    <!-- Four-bar links clip each other near base when joint is small; exclude
+         so the mimic equality constraints do not fight internal contacts. -->
+    <exclude body1="2f85_base"                 body2="2f85_left_outer_knuckle"/>
+    <exclude body1="2f85_base"                 body2="2f85_right_outer_knuckle"/>
+    <exclude body1="2f85_base"                 body2="2f85_left_inner_knuckle"/>
+    <exclude body1="2f85_base"                 body2="2f85_right_inner_knuckle"/>
+    <exclude body1="2f85_left_outer_knuckle"   body2="2f85_left_inner_knuckle"/>
+    <exclude body1="2f85_right_outer_knuckle"  body2="2f85_right_inner_knuckle"/>
+    <exclude body1="2f85_left_outer_finger"    body2="2f85_left_inner_finger"/>
+    <exclude body1="2f85_right_outer_finger"   body2="2f85_right_inner_finger"/>
+    <exclude body1="2f85_left_outer_knuckle"   body2="2f85_left_outer_finger"/>
+    <exclude body1="2f85_right_outer_knuckle"  body2="2f85_right_outer_finger"/>
+    <exclude body1="2f85_left_inner_knuckle"   body2="2f85_left_inner_finger"/>
+    <exclude body1="2f85_right_inner_knuckle"  body2="2f85_right_inner_finger"/>
+  </contact>
+
+  <equality>
+    <!-- URDF mimic(multiplier=+1): polycoef = [offset, slope, 0, 0, 0] -->
+    <joint joint1="2f85_right_outer_knuckle_joint" joint2="2f85_finger_joint"
+           polycoef="0 1 0 0 0" solimp="0.95 0.99 0.001" solref="0.005 1"/>
+    <joint joint1="2f85_left_inner_knuckle_joint"  joint2="2f85_finger_joint"
+           polycoef="0 1 0 0 0" solimp="0.95 0.99 0.001" solref="0.005 1"/>
+    <joint joint1="2f85_right_inner_knuckle_joint" joint2="2f85_finger_joint"
+           polycoef="0 1 0 0 0" solimp="0.95 0.99 0.001" solref="0.005 1"/>
+    <!-- URDF mimic(multiplier=-1): inner fingers rotate opposite to the driver. -->
+    <joint joint1="2f85_left_inner_finger_joint"   joint2="2f85_finger_joint"
+           polycoef="0 -1 0 0 0" solimp="0.95 0.99 0.001" solref="0.005 1"/>
+    <joint joint1="2f85_right_inner_finger_joint"  joint2="2f85_finger_joint"
+           polycoef="0 -1 0 0 0" solimp="0.95 0.99 0.001" solref="0.005 1"/>
+  </equality>
+
+  <actuator>
+    <!--
+      Single control channel — matches the real Robotiq Modbus-RTU interface
+      (one position/speed/force setpoint per cycle).
+      ctrl in [0, 0.8] rad -> 0 = fully open (85 mm), 0.8 = fully closed.
+    -->
+    <general name="2f85_fingers_actuator" joint="2f85_finger_joint"
+             gaintype="fixed" biastype="affine"
+             gainprm="40" biasprm="0 -40 -5"
+             ctrlrange="0 0.8" forcerange="-100 100"/>
+  </actuator>
+
+  <keyframe>
+    <!-- qpos order (DFS over bodies):
+           [0] finger_joint                      (driver)
+           [1] left_inner_finger_joint           (spring_link, sign -1)
+           [2] left_inner_knuckle_joint          (follower, sign +1)
+           [3] right_outer_knuckle_joint         (driver copy, sign +1)
+           [4] right_inner_finger_joint          (spring_link, sign -1)
+           [5] right_inner_knuckle_joint         (follower, sign +1) -->
+    <key name="open"   qpos="0 0 0 0 0 0"            ctrl="0"/>
+    <key name="closed" qpos="0.8 -0.8 0.8 0.8 -0.8 0.8" ctrl="0.8"/>
+  </keyframe>
+</mujoco>

@@ -1,0 +1,372 @@
+<mujoco model="iiwa7_with_2f85">
+  <!--
+    Composite model: KUKA LBR iiwa7 arm + Robotiq 2F-85 gripper.
+
+    Layout rationale:
+      - Arm kinematics / dynamics / actuators are copied verbatim from
+        iiwa7_tuned.xml. This file is NOT an <include> because the gripper
+        has to be inserted as a child of iiwa_link_7, which MJCF <include>
+        cannot do cleanly.
+      - Gripper kinematics are the same tree as robotiq_2f85.xml (standalone),
+        translated+rotated into iiwa_link_7 at the attachment_site pose.
+      - Arm meshes live in meshes/ ; gripper meshes live in meshes_2f85/.
+        We set compiler meshdir="." and spell out both prefixes in file="..."
+        so both asset sets resolve cleanly from the same XML.
+
+    Control architecture — the two channels are INTENTIONALLY separated:
+      <actuator> block 1  ARM     ctrl[0:7]  — forwarded to KUKA FRI / KRC
+      <actuator> block 2  GRIPPER ctrl[7]    — forwarded to Robotiq Modbus RTU
+      This mirrors the real system, where the two signals travel on different
+      interfaces at different rates. MuJoCo merges the blocks internally, but
+      the source-level split makes the separation explicit and prevents
+      accidental coupling when users edit the file.
+  -->
+
+  <compiler angle="radian" meshdir="." autolimits="true"/>
+  <option integrator="implicitfast" timestep="0.002"/>
+
+  <default>
+    <!-- ========== ARM defaults (iiwa7_tuned) ========== -->
+    <default class="iiwa">
+      <joint axis="0 0 1" damping="0.5" armature="0.1"/>
+      <general gaintype="fixed" biastype="affine" gainprm="2000" biasprm="0 -2000 -200"/>
+      <default class="joint1">
+        <joint range="-2.96706 2.96706"/>
+        <general ctrlrange="-2.96706 2.96706" forcerange="-176 176"/>
+      </default>
+      <default class="joint2">
+        <joint range="-2.09440 2.09440"/>
+        <general ctrlrange="-2.09440 2.09440" forcerange="-176 176"/>
+      </default>
+      <default class="joint3_mid">
+        <joint range="-2.96706 2.96706"/>
+        <general ctrlrange="-2.96706 2.96706" forcerange="-110 110"/>
+      </default>
+      <default class="joint4_mid">
+        <joint range="-2.09440 2.09440" ref="1.5708"/>
+        <general ctrlrange="-2.09440 2.09440" forcerange="-110 110"/>
+      </default>
+      <default class="joint5_mid">
+        <joint range="-2.96706 2.96706"/>
+        <general ctrlrange="-2.96706 2.96706" forcerange="-110 110"/>
+      </default>
+      <default class="joint6_distal">
+        <joint range="-2.09440 2.09440" ref="-1.5708"/>
+        <general ctrlrange="-2.09440 2.09440" forcerange="-40 40"/>
+      </default>
+      <default class="joint7_distal">
+        <joint range="-3.05433 3.05433"/>
+        <general ctrlrange="-3.05433 3.05433" forcerange="-40 40"/>
+      </default>
+      <default class="iiwa/visual">
+        <geom type="mesh" contype="0" conaffinity="0" group="2" material="iiwa_grey"/>
+      </default>
+      <default class="iiwa/collision">
+        <geom type="mesh" group="3"/>
+      </default>
+    </default>
+
+    <!-- ========== GRIPPER defaults (robotiq 2F-85) ========== -->
+    <default class="2f85">
+      <joint axis="1 0 0" damping="0.1" armature="0.001"/>
+      <default class="2f85/driver">
+        <joint range="0 0.8"/>
+      </default>
+      <default class="2f85/follower">
+        <joint range="0 0.8757"/>
+      </default>
+      <default class="2f85/spring_link">
+        <joint range="-0.8757 0"/>
+      </default>
+      <default class="2f85/visual">
+        <geom type="mesh" contype="0" conaffinity="0" group="2" density="0"/>
+      </default>
+      <default class="2f85/collision">
+        <geom type="mesh" group="3"/>
+      </default>
+      <default class="2f85/pad">
+        <geom type="box" size="0.011 0.003175 0.01875" friction="1.0 0.05 0.001"
+              solimp="0.95 0.99 0.001" solref="0.004 1"/>
+      </default>
+    </default>
+  </default>
+
+  <asset>
+    <!-- ---------- ARM materials & meshes ---------- -->
+    <material name="iiwa_grey"   rgba="0.4 0.4 0.4 1"       specular="0.5" shininess="0.25"/>
+    <material name="iiwa_orange" rgba="1.0 0.423529 0.0392157 1" specular="0.5" shininess="0.25"/>
+
+    <mesh name="link_0_vis"        file="meshes/visual/link_0.obj"/>
+    <mesh name="link_1_vis"        file="meshes/visual/link_1.obj"/>
+    <mesh name="link_2_orange_vis" file="meshes/visual/link_2_orange.obj"/>
+    <mesh name="link_2_grey_vis"   file="meshes/visual/link_2_grey.obj"/>
+    <mesh name="link_3_vis"        file="meshes/visual/link_3.obj"/>
+    <mesh name="link_4_orange_vis" file="meshes/visual/link_4_orange.obj"/>
+    <mesh name="link_4_grey_vis"   file="meshes/visual/link_4_grey.obj"/>
+    <mesh name="link_5_vis"        file="meshes/visual/link_5.obj"/>
+    <mesh name="link_6_orange_vis" file="meshes/visual/link_6_orange.obj"/>
+    <mesh name="link_6_grey_vis"   file="meshes/visual/link_6_grey.obj"/>
+    <mesh name="link_7_vis"        file="meshes/visual/link_7.obj"/>
+
+    <mesh name="link_0_col" file="meshes/collision/link_0.stl"/>
+    <mesh name="link_1_col" file="meshes/collision/link_1.stl"/>
+    <mesh name="link_2_col" file="meshes/collision/link_2.stl"/>
+    <mesh name="link_3_col" file="meshes/collision/link_3.stl"/>
+    <mesh name="link_4_col" file="meshes/collision/link_4.stl"/>
+    <mesh name="link_5_col" file="meshes/collision/link_5.stl"/>
+    <mesh name="link_6_col" file="meshes/collision/link_6.stl"/>
+    <mesh name="link_7_col" file="meshes/collision/link_7.stl"/>
+
+    <!-- ---------- GRIPPER materials & meshes ---------- -->
+    <material name="2f85_black" rgba="0.1 0.1 0.1 1"    specular="0.5" shininess="0.25"/>
+    <material name="2f85_light" rgba="0.79 0.82 0.93 1" specular="0.5" shininess="0.25"/>
+    <material name="2f85_pad"   rgba="0.9 0.9 0.9 1"    specular="0.2" shininess="0.1"/>
+
+    <mesh name="2f85_base_vis"          file="meshes_2f85/visual/robotiq_arg2f_85_base_link.obj"/>
+    <mesh name="2f85_outer_knuckle_vis" file="meshes_2f85/visual/robotiq_arg2f_85_outer_knuckle.obj"/>
+    <mesh name="2f85_outer_finger_vis"  file="meshes_2f85/visual/robotiq_arg2f_85_outer_finger.obj"/>
+    <mesh name="2f85_inner_knuckle_vis" file="meshes_2f85/visual/robotiq_arg2f_85_inner_knuckle.obj"/>
+    <mesh name="2f85_inner_finger_vis"  file="meshes_2f85/visual/robotiq_arg2f_85_inner_finger.obj"/>
+    <mesh name="2f85_pad_vis"           file="meshes_2f85/visual/robotiq_arg2f_85_pad.obj"/>
+
+    <mesh name="2f85_base_col"          file="meshes_2f85/collision/robotiq_arg2f_85_base_link.stl"/>
+    <mesh name="2f85_outer_knuckle_col" file="meshes_2f85/collision/robotiq_arg2f_85_outer_knuckle.stl"/>
+    <mesh name="2f85_outer_finger_col"  file="meshes_2f85/collision/robotiq_arg2f_85_outer_finger.stl"/>
+    <mesh name="2f85_inner_knuckle_col" file="meshes_2f85/collision/robotiq_arg2f_85_inner_knuckle.stl"/>
+    <mesh name="2f85_inner_finger_col"  file="meshes_2f85/collision/robotiq_arg2f_85_inner_finger.stl"/>
+  </asset>
+
+  <worldbody>
+    <body name="iiwa_link_0" childclass="iiwa">
+      <geom class="iiwa/visual" mesh="link_0_vis"/>
+      <geom class="iiwa/collision" mesh="link_0_col"/>
+
+      <body name="iiwa_link_1" pos="0 0 0.15">
+        <inertial pos="0 -0.03 0.12" quat="0.428904 0.562175 -0.562175 0.428904"
+                  mass="3.4525" diaginertia="0.0218946 0.02183 0.00663837"/>
+        <joint name="iiwa_joint_1" class="joint1"/>
+        <geom class="iiwa/visual" pos="0 0 0.0075" mesh="link_1_vis"/>
+        <geom class="iiwa/collision" mesh="link_1_col"/>
+
+        <body name="iiwa_link_2" pos="0 0 0.19" quat="0 0 0.707107 0.707107">
+          <inertial pos="0.0003 0.059 0.042" quat="0.701371 0.0898824 0.0898824 0.701371"
+                    mass="3.4821" diaginertia="0.02179 0.0217049 0.00684512"/>
+          <joint name="iiwa_joint_2" class="joint2"/>
+          <geom class="iiwa/visual" material="iiwa_orange" mesh="link_2_orange_vis"/>
+          <geom class="iiwa/visual" mesh="link_2_grey_vis"/>
+          <geom class="iiwa/collision" mesh="link_2_col"/>
+
+          <body name="iiwa_link_3" pos="0 0.21 0" quat="0 0 0.707107 0.707107">
+            <inertial pos="0 0.03 0.13" quat="0.56292 0.427927 -0.427927 0.56292"
+                      mass="4.05623" diaginertia="0.0321488 0.03204 0.00799117"/>
+            <joint name="iiwa_joint_3" class="joint3_mid"/>
+            <geom class="iiwa/visual" pos="0 0 -0.026" mesh="link_3_vis"/>
+            <geom class="iiwa/collision" mesh="link_3_col"/>
+
+            <body name="iiwa_link_4" pos="0 0 0.19" quat="0.707107 0.707107 0 0">
+              <inertial pos="0 0.067 0.034" quat="0.991887 -0.127124 0 0"
+                        mass="3.4822" diaginertia="0.02178 0.0216947 0.00684029"/>
+              <joint name="iiwa_joint_4" class="joint4_mid"/>
+              <geom class="iiwa/visual" material="iiwa_orange" mesh="link_4_orange_vis"/>
+              <geom class="iiwa/visual" mesh="link_4_grey_vis"/>
+              <geom class="iiwa/collision" mesh="link_4_col"/>
+
+              <body name="iiwa_link_5" pos="0 0.21 0" quat="0 0 0.707107 0.707107">
+                <inertial pos="0.0001 0.021 0.076" quat="0.365352 0.605407 -0.605407 0.365352"
+                          mass="2.1633" diaginertia="0.0131987 0.01287 0.0036293"/>
+                <joint name="iiwa_joint_5" class="joint5_mid"/>
+                <geom class="iiwa/visual" pos="0 0 -0.026" mesh="link_5_vis"/>
+                <geom class="iiwa/collision" mesh="link_5_col"/>
+
+                <body name="iiwa_link_6" pos="0 0.0607 0.19" quat="0.707107 0.707107 0 0">
+                  <inertial pos="0 0.0006 0.0004" quat="0.996112 0.088097 0 0"
+                            mass="2.3466" diaginertia="0.006509 0.00631585 0.00447015"/>
+                  <joint name="iiwa_joint_6" class="joint6_distal"/>
+                  <geom class="iiwa/visual" material="iiwa_orange" mesh="link_6_orange_vis"/>
+                  <geom class="iiwa/visual" mesh="link_6_grey_vis"/>
+                  <geom class="iiwa/collision" mesh="link_6_col"/>
+
+                  <body name="iiwa_link_7" pos="0 0.081 0.0607" quat="0 0 0.707107 0.707107">
+                    <inertial pos="0 0 0.02" quat="0.923068 0 0 0.384636"
+                              mass="3.129" diaginertia="0.0152362 0.0140538 0.002872"/>
+                    <joint name="iiwa_joint_7" class="joint7_distal"/>
+                    <geom class="iiwa/visual" pos="0 0 -0.0005" mesh="link_7_vis"/>
+                    <geom class="iiwa/collision" mesh="link_7_col"/>
+                    <site name="attachment_site" pos="0 0 0.05" size="0.005" rgba="1 0 0 1" group="4"/>
+
+                    <!-- ========== Robotiq 2F-85 mounted on the flange ========== -->
+                    <body name="2f85_base" childclass="2f85" pos="0 0 0.05">
+                      <inertial pos="0 0 0.03145" mass="0.22652"
+                                diaginertia="0.00020005 0.00017832 0.00013478"/>
+                      <geom class="2f85/visual"    material="2f85_black" mesh="2f85_base_vis"/>
+                      <geom class="2f85/collision" mesh="2f85_base_col"/>
+
+                      <body name="2f85_left_outer_knuckle" pos="0 -0.0306011 0.054904" quat="0 0 0 1">
+                        <inertial pos="-0.0002 0.01994 0.02922" mass="0.00853"
+                                  diaginertia="2.89e-06 1.87e-06 1.22e-06"/>
+                        <joint name="2f85_finger_joint" class="2f85/driver"/>
+                        <geom class="2f85/visual"    material="2f85_light" mesh="2f85_outer_knuckle_vis"/>
+                        <geom class="2f85/collision" mesh="2f85_outer_knuckle_col"/>
+
+                        <body name="2f85_left_outer_finger" pos="0 0.0315 -0.0041">
+                          <inertial pos="0.0003 0.0374 -0.0208" mass="0.02261"
+                                    diaginertia="1.53e-05 6.18e-06 1.16e-05"/>
+                          <geom class="2f85/visual"    material="2f85_black" mesh="2f85_outer_finger_vis"/>
+                          <geom class="2f85/collision" mesh="2f85_outer_finger_col"/>
+
+                          <body name="2f85_left_inner_finger" pos="0 0.0061 0.0471">
+                            <inertial pos="0.0003 0.0160 -0.0137" mass="0.01040"
+                                      diaginertia="2.72e-06 7.69e-07 2.30e-06"/>
+                            <joint name="2f85_left_inner_finger_joint" class="2f85/spring_link"/>
+                            <geom class="2f85/visual"    material="2f85_black" mesh="2f85_inner_finger_vis"/>
+                            <geom class="2f85/collision" mesh="2f85_inner_finger_col"/>
+
+                            <body name="2f85_left_pad" pos="0 -0.022020 0.03242">
+                              <inertial pos="0 0 0" mass="0.005" diaginertia="1e-6 1e-6 1e-6"/>
+                              <geom class="2f85/pad" material="2f85_pad"
+                                    contype="0" conaffinity="0" group="2" density="0"/>
+                              <geom class="2f85/pad" group="3" rgba="0.9 0 0 0.3"/>
+                            </body>
+                          </body>
+                        </body>
+                      </body>
+
+                      <body name="2f85_left_inner_knuckle" pos="0 -0.0127 0.06142" quat="0 0 0 1">
+                        <inertial pos="0.0001 0.0508 0.0010" mass="0.02712"
+                                  diaginertia="2.62e-05 2.83e-06 2.84e-05"/>
+                        <joint name="2f85_left_inner_knuckle_joint" class="2f85/follower"/>
+                        <geom class="2f85/visual"    material="2f85_black" mesh="2f85_inner_knuckle_vis"/>
+                        <geom class="2f85/collision" mesh="2f85_inner_knuckle_col"/>
+                      </body>
+
+                      <body name="2f85_right_outer_knuckle" pos="0 0.0306011 0.054904">
+                        <inertial pos="-0.0002 0.01994 0.02922" mass="0.00853"
+                                  diaginertia="2.89e-06 1.87e-06 1.22e-06"/>
+                        <joint name="2f85_right_outer_knuckle_joint" class="2f85/driver"/>
+                        <geom class="2f85/visual"    material="2f85_light" mesh="2f85_outer_knuckle_vis"/>
+                        <geom class="2f85/collision" mesh="2f85_outer_knuckle_col"/>
+
+                        <body name="2f85_right_outer_finger" pos="0 0.0315 -0.0041">
+                          <inertial pos="0.0003 0.0374 -0.0208" mass="0.02261"
+                                    diaginertia="1.53e-05 6.18e-06 1.16e-05"/>
+                          <geom class="2f85/visual"    material="2f85_black" mesh="2f85_outer_finger_vis"/>
+                          <geom class="2f85/collision" mesh="2f85_outer_finger_col"/>
+
+                          <body name="2f85_right_inner_finger" pos="0 0.0061 0.0471">
+                            <inertial pos="0.0003 0.0160 -0.0137" mass="0.01040"
+                                      diaginertia="2.72e-06 7.69e-07 2.30e-06"/>
+                            <joint name="2f85_right_inner_finger_joint" class="2f85/spring_link"/>
+                            <geom class="2f85/visual"    material="2f85_black" mesh="2f85_inner_finger_vis"/>
+                            <geom class="2f85/collision" mesh="2f85_inner_finger_col"/>
+
+                            <body name="2f85_right_pad" pos="0 -0.022020 0.03242">
+                              <inertial pos="0 0 0" mass="0.005" diaginertia="1e-6 1e-6 1e-6"/>
+                              <geom class="2f85/pad" material="2f85_pad"
+                                    contype="0" conaffinity="0" group="2" density="0"/>
+                              <geom class="2f85/pad" group="3" rgba="0.9 0 0 0.3"/>
+                            </body>
+                          </body>
+                        </body>
+                      </body>
+
+                      <body name="2f85_right_inner_knuckle" pos="0 0.0127 0.06142">
+                        <inertial pos="0.0001 0.0508 0.0010" mass="0.02712"
+                                  diaginertia="2.62e-05 2.83e-06 2.84e-05"/>
+                        <joint name="2f85_right_inner_knuckle_joint" class="2f85/follower"/>
+                        <geom class="2f85/visual"    material="2f85_black" mesh="2f85_inner_knuckle_vis"/>
+                        <geom class="2f85/collision" mesh="2f85_inner_knuckle_col"/>
+                      </body>
+
+                      <site name="2f85_tcp" pos="0 0 0.144" size="0.005" rgba="0 1 0 1" group="4"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <contact>
+    <!-- ARM non-adjacent-link excludes (iiwa7_tuned) -->
+    <exclude body1="iiwa_link_0" body2="iiwa_link_1"/>
+    <exclude body1="iiwa_link_0" body2="iiwa_link_2"/>
+    <exclude body1="iiwa_link_0" body2="iiwa_link_3"/>
+    <exclude body1="iiwa_link_1" body2="iiwa_link_3"/>
+    <exclude body1="iiwa_link_3" body2="iiwa_link_5"/>
+    <exclude body1="iiwa_link_4" body2="iiwa_link_7"/>
+    <exclude body1="iiwa_link_5" body2="iiwa_link_7"/>
+
+    <!-- ARM <-> GRIPPER: don't let link_7 chatter with the gripper base -->
+    <exclude body1="iiwa_link_7" body2="2f85_base"/>
+    <exclude body1="iiwa_link_6" body2="2f85_base"/>
+
+    <!-- GRIPPER internal four-bar excludes -->
+    <exclude body1="2f85_base"                 body2="2f85_left_outer_knuckle"/>
+    <exclude body1="2f85_base"                 body2="2f85_right_outer_knuckle"/>
+    <exclude body1="2f85_base"                 body2="2f85_left_inner_knuckle"/>
+    <exclude body1="2f85_base"                 body2="2f85_right_inner_knuckle"/>
+    <exclude body1="2f85_left_outer_knuckle"   body2="2f85_left_inner_knuckle"/>
+    <exclude body1="2f85_right_outer_knuckle"  body2="2f85_right_inner_knuckle"/>
+    <exclude body1="2f85_left_outer_finger"    body2="2f85_left_inner_finger"/>
+    <exclude body1="2f85_right_outer_finger"   body2="2f85_right_inner_finger"/>
+    <exclude body1="2f85_left_outer_knuckle"   body2="2f85_left_outer_finger"/>
+    <exclude body1="2f85_right_outer_knuckle"  body2="2f85_right_outer_finger"/>
+    <exclude body1="2f85_left_inner_knuckle"   body2="2f85_left_inner_finger"/>
+    <exclude body1="2f85_right_inner_knuckle"  body2="2f85_right_inner_finger"/>
+  </contact>
+
+  <equality>
+    <!-- GRIPPER mimic via polycoef. Driver: 2f85_finger_joint. -->
+    <joint joint1="2f85_right_outer_knuckle_joint" joint2="2f85_finger_joint"
+           polycoef="0 1 0 0 0" solimp="0.95 0.99 0.001" solref="0.005 1"/>
+    <joint joint1="2f85_left_inner_knuckle_joint"  joint2="2f85_finger_joint"
+           polycoef="0 1 0 0 0" solimp="0.95 0.99 0.001" solref="0.005 1"/>
+    <joint joint1="2f85_right_inner_knuckle_joint" joint2="2f85_finger_joint"
+           polycoef="0 1 0 0 0" solimp="0.95 0.99 0.001" solref="0.005 1"/>
+    <joint joint1="2f85_left_inner_finger_joint"   joint2="2f85_finger_joint"
+           polycoef="0 -1 0 0 0" solimp="0.95 0.99 0.001" solref="0.005 1"/>
+    <joint joint1="2f85_right_inner_finger_joint"  joint2="2f85_finger_joint"
+           polycoef="0 -1 0 0 0" solimp="0.95 0.99 0.001" solref="0.005 1"/>
+  </equality>
+
+  <!-- ======================================================================
+       ARM ACTUATORS  (control channel 1, forwarded to KUKA FRI / KRC)
+       ======================================================================
+       ctrl indices [0..6] drive iiwa_joint_1..7 in radians.
+  -->
+  <actuator>
+    <general name="actuator1" joint="iiwa_joint_1" class="joint1"/>
+    <general name="actuator2" joint="iiwa_joint_2" class="joint2"/>
+    <general name="actuator3" joint="iiwa_joint_3" class="joint3_mid"/>
+    <general name="actuator4" joint="iiwa_joint_4" class="joint4_mid"/>
+    <general name="actuator5" joint="iiwa_joint_5" class="joint5_mid"/>
+    <general name="actuator6" joint="iiwa_joint_6" class="joint6_distal"/>
+    <general name="actuator7" joint="iiwa_joint_7" class="joint7_distal"/>
+  </actuator>
+
+  <!-- ======================================================================
+       GRIPPER ACTUATOR  (control channel 2, forwarded to Robotiq Modbus RTU)
+       ======================================================================
+       ctrl index [7] commands the 2F-85 finger stroke:
+         0.0  rad  -> fully open  (85 mm jaw gap)
+         0.8  rad  -> fully closed
+       Deliberately kept in a SEPARATE <actuator> block so readers and
+       downstream tooling see the split control architecture at a glance.
+  -->
+  <actuator>
+    <general name="2f85_fingers_actuator" joint="2f85_finger_joint"
+             gaintype="fixed" biastype="affine"
+             gainprm="40" biasprm="0 -40 -5"
+             ctrlrange="0 0.8" forcerange="-100 100"/>
+  </actuator>
+
+  <!-- Keyframes are intentionally NOT defined here. This file is meant to be
+       <include>d inside scenes that may add extra bodies (cubes, fixtures,
+       mocap targets) and thereby change nq. Each scene provides its own
+       <keyframe>, padding the arm+gripper section with [0]*13 and appending
+       the scene-specific object state. -->
+
+</mujoco>
