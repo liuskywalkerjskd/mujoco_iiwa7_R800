@@ -17,3 +17,6 @@ Thumbs.db
 *.log
 *.tmp
 *.bak
+
+# Claude Code agent runtime state (never commit)
+.claude/
