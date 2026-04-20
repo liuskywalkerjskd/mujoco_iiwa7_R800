@@ -14,9 +14,13 @@
     consistent point (5 cm beyond link_7 origin along its local +Z / tool axis).
   -->
 
-  <include file="../../iiwa7_mjcf/iiwa7.xml"/>
+  <!-- Switched to iiwa7_with_gripper.xml so every demo runs with the
+       Robotiq 2F-85 attached. That file already owns the arm actuators
+       (kp=2000 general) and gripper actuator, so the scene-level
+       <actuator> block below is retired. -->
+  <include file="../../iiwa7_mjcf/iiwa7_with_gripper.xml"/>
 
-  <compiler meshdir="../../iiwa7_mjcf/meshes"/>
+  <compiler meshdir="../../iiwa7_mjcf"/>
   <option integrator="implicitfast" timestep="0.002"/>
 
   <visual>
@@ -65,19 +69,11 @@
     <framepos name="ee_pos" objtype="body" objname="iiwa_link_7"/>
   </sensor>
 
-  <actuator>
-    <position name="iiwa_joint_1_pos" joint="iiwa_joint_1" kp="400" ctrlrange="-2.96706 2.96706"/>
-    <position name="iiwa_joint_2_pos" joint="iiwa_joint_2" kp="400" ctrlrange="-2.09440 2.09440"/>
-    <position name="iiwa_joint_3_pos" joint="iiwa_joint_3" kp="400" ctrlrange="-2.96706 2.96706"/>
-    <position name="iiwa_joint_4_pos" joint="iiwa_joint_4" kp="400" ctrlrange="-2.09440 2.09440"/>
-    <position name="iiwa_joint_5_pos" joint="iiwa_joint_5" kp="200" ctrlrange="-2.96706 2.96706"/>
-    <position name="iiwa_joint_6_pos" joint="iiwa_joint_6" kp="200" ctrlrange="-2.09440 2.09440"/>
-    <position name="iiwa_joint_7_pos" joint="iiwa_joint_7" kp="100" ctrlrange="-3.05433 3.05433"/>
-  </actuator>
-
   <keyframe>
-    <!-- Same rationale as iiwa7_scene.xml: J4/J6 use ref=±1.5708, so
-         qpos=0 is already the real-robot home pose. -->
-    <key name="home" qpos="0 0 0 0 0 0 0" ctrl="0 0 0 0 0 0 0"/>
+    <!-- J4/J6 use ref=±1.5708 so qpos=0 is the real-robot home pose.
+         Layout: arm*7 + gripper*6 = 13 qpos, arm*7 + gripper*1 = 8 ctrl. -->
+    <key name="home"
+         qpos="0 0 0 0 0 0 0   0 0 0 0 0 0"
+         ctrl="0 0 0 0 0 0 0   0"/>
   </keyframe>
 </mujoco>

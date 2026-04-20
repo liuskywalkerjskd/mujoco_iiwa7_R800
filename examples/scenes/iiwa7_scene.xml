@@ -18,9 +18,12 @@
     kp values are conservative for first-touch use; raise once tuned.
   -->
 
-  <include file="../../iiwa7_mjcf/iiwa7.xml"/>
+  <!-- Upgraded to the iiwa7 + Robotiq 2F-85 composite model. The gripper
+       XML already owns the arm (kp=2000 general) and gripper actuators,
+       so the scene-level position-actuator block is retired. -->
+  <include file="../../iiwa7_mjcf/iiwa7_with_gripper.xml"/>
 
-  <compiler meshdir="../../iiwa7_mjcf/meshes"/>
+  <compiler meshdir="../../iiwa7_mjcf"/>
   <option integrator="implicitfast" timestep="0.002"/>
 
   <visual>
@@ -44,21 +47,12 @@
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
   </worldbody>
 
-  <actuator>
-    <position name="iiwa_joint_1_pos" joint="iiwa_joint_1" kp="200" ctrlrange="-2.96706 2.96706"/>
-    <position name="iiwa_joint_2_pos" joint="iiwa_joint_2" kp="200" ctrlrange="-2.09440 2.09440"/>
-    <position name="iiwa_joint_3_pos" joint="iiwa_joint_3" kp="200" ctrlrange="-2.96706 2.96706"/>
-    <position name="iiwa_joint_4_pos" joint="iiwa_joint_4" kp="200" ctrlrange="-2.09440 2.09440"/>
-    <position name="iiwa_joint_5_pos" joint="iiwa_joint_5" kp="100" ctrlrange="-2.96706 2.96706"/>
-    <position name="iiwa_joint_6_pos" joint="iiwa_joint_6" kp="100" ctrlrange="-2.09440 2.09440"/>
-    <position name="iiwa_joint_7_pos" joint="iiwa_joint_7" kp="50"  ctrlrange="-3.05433 3.05433"/>
-  </actuator>
-
   <keyframe>
-    <!-- J4 has ref=+1.5708 and J6 has ref=-1.5708 in iiwa7.xml, so qpos=0
-         already corresponds to the experimental home pose (J4=+90°,
-         J6=-90°). Keep qpos/ctrl at zero here — using 1.5708 would drive
-         the arm to the physically-vertical (all-zeros) configuration. -->
-    <key name="home" qpos="0 0 0 0 0 0 0" ctrl="0 0 0 0 0 0 0"/>
+    <!-- J4/J6 use ref=±1.5708 in iiwa7_with_gripper.xml, so qpos=0
+         corresponds to the experimental home pose (J4=+90°, J6=-90°).
+         Layout: arm*7 + gripper*6 = 13 qpos, arm*7 + gripper*1 = 8 ctrl. -->
+    <key name="home"
+         qpos="0 0 0 0 0 0 0   0 0 0 0 0 0"
+         ctrl="0 0 0 0 0 0 0   0"/>
   </keyframe>
 </mujoco>

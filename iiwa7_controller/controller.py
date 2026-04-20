@@ -43,6 +43,12 @@ class IiwaEEController:
 
     DEFAULT_TOOL_OFFSET = np.array([0.0, 0.0, 0.05])  # attachment_site on link7
 
+    # The arm has 7 revolute joints; any DoFs beyond that (e.g. a 2F-85
+    # gripper) must be excluded from IK, PD tracking and feedforward so the
+    # gripper's own actuator channel stays independent.
+    ARM_NV = 7
+    ARM_NU = 7
+
     def __init__(
         self,
         model: mujoco.MjModel,
@@ -160,9 +166,22 @@ class IiwaEEController:
         return self.set_ee_target(pos=pos_world, quat=quat_world_wxyz)
 
     def set_joint_target(self, q: np.ndarray) -> None:
-        """Directly set the joint-space target (skip IK)."""
-        q = np.asarray(q, dtype=float).reshape(self.model.nq)
-        self._q_target = q.copy()
+        """Directly set the joint-space target (skip IK).
+
+        Accepts either a full nq vector or a shorter arm-only vector of
+        length ARM_NV=7. In the latter case, non-arm entries (gripper,
+        freejoint, etc.) of the internal target are left untouched.
+        """
+        q = np.asarray(q, dtype=float).reshape(-1)
+        if q.size == self.model.nq:
+            self._q_target = q.copy()
+        elif q.size == self.ARM_NV:
+            self._q_target = self._q_target.copy()
+            self._q_target[: self.ARM_NV] = q
+        else:
+            raise ValueError(
+                f"set_joint_target expects length {self.ARM_NV} or {self.model.nq}, got {q.size}"
+            )
 
     def update(self, model: mujoco.MjModel, data: mujoco.MjData) -> None:
         """Compute and write control signals for one sim step.
@@ -176,13 +195,17 @@ class IiwaEEController:
         self._q_hist[2] = self._q_target
 
         if self.mode == "kinematic":
-            data.qpos[: model.nq] = self._q_target
-            data.qvel[: model.nv] = 0.0
+            # Drive the arm only; leave the gripper (and any other extra
+            # DoFs beyond the first 7) untouched so their own actuators /
+            # freejoint dynamics keep owning those indices.
+            data.qpos[: self.ARM_NV] = self._q_target[: self.ARM_NV]
+            data.qvel[: self.ARM_NV] = 0.0
             return
 
         if self.mode == "pd_only":
-            data.ctrl[: model.nu] = self._q_target[: model.nu]
-            data.qfrc_applied[: model.nv] = 0.0
+            data.ctrl[: self.ARM_NU] = self._q_target[: self.ARM_NU]
+            # Do NOT touch data.ctrl[ARM_NU:] — that's the gripper channel.
+            data.qfrc_applied[: self.ARM_NV] = 0.0
             return
 
         # All other modes are PD + some form of inverse-dynamics FF.
@@ -200,29 +223,41 @@ class IiwaEEController:
         elif self.mode == "full_id_ff_ref":
             # mj_inverse at reference state (q_d, qd_d, qdd_d)
             self._id_data.qpos[:] = self._q_target
-            self._id_data.qvel[:] = qd_target
-            self._id_data.qacc[:] = qdd_target
+            # qd_target / qdd_target may only cover the first ARM_NV entries
+            # when the caller set a joint target shorter than model.nv; pad.
+            self._id_data.qvel[:] = 0.0
+            self._id_data.qvel[: self.ARM_NV] = qd_target[: self.ARM_NV]
+            self._id_data.qacc[:] = 0.0
+            self._id_data.qacc[: self.ARM_NV] = qdd_target[: self.ARM_NV]
             mujoco.mj_inverse(model, self._id_data)
             tau_ff = self._id_data.qfrc_inverse.copy()
 
         elif self.mode == "full_id_ff_current":
             # Task-space PD folded into commanded acceleration, then
-            # mj_inverse at CURRENT state (q, qd, qdd_cmd)
-            qdd_cmd = (
-                qdd_target
-                + self.kp_tsk * (self._q_target - data.qpos[: model.nq])
-                + self.kd_tsk * (qd_target - data.qvel[: model.nv])
+            # mj_inverse at CURRENT state (q, qd, qdd_cmd). Restricted to
+            # the arm DoFs so extras (e.g. gripper fingers, freejoint cube)
+            # are NOT servoed by this loop.
+            n = self.ARM_NV
+            qdd_cmd_full = np.zeros(model.nv)
+            qdd_cmd_full[:n] = (
+                qdd_target[:n]
+                + self.kp_tsk * (self._q_target[:n] - data.qpos[:n])
+                + self.kd_tsk * (qd_target[:n] - data.qvel[:n])
             )
             self._id_data.qpos[:] = data.qpos
             self._id_data.qvel[:] = data.qvel
-            self._id_data.qacc[:] = qdd_cmd
+            self._id_data.qacc[:] = qdd_cmd_full
             mujoco.mj_inverse(model, self._id_data)
             tau_ff = self._id_data.qfrc_inverse.copy()
         else:
             raise RuntimeError(f"unreachable mode {self.mode!r}")
 
-        data.ctrl[: model.nu] = self._q_target[: model.nu]
-        data.qfrc_applied[: model.nv] = tau_ff
+        # Arm-only PD actuator targets; leave ctrl[ARM_NU:] for the gripper.
+        data.ctrl[: self.ARM_NU] = self._q_target[: self.ARM_NU]
+        # Arm-only feedforward torques; gripper / freejoint DoFs get zero so
+        # their native dynamics (or the user's gripper setpoint) dominate.
+        data.qfrc_applied[: model.nv] = 0.0
+        data.qfrc_applied[: self.ARM_NV] = tau_ff[: self.ARM_NV]
 
     # -------------------------------------------------------------- IK
 
@@ -241,6 +276,7 @@ class IiwaEEController:
         d = self._ik_data
         d.qpos[: self.model.nq] = self._q_target
         nv = self.model.nv
+        n_arm = self.ARM_NV
         jp = np.zeros((3, nv))
         jr = np.zeros((3, nv))
         step = 0.5
@@ -253,10 +289,13 @@ class IiwaEEController:
                 self._q_target = d.qpos[: self.model.nq].copy()
                 return norm
             mujoco.mj_jacBody(self.model, d, jp, jr, self.ee_body_id)
-            JJT = jp @ jp.T + self.ik_damping ** 2 * np.eye(3)
-            dq = jp.T @ np.linalg.solve(JJT, err)
-            # Use mj_integratePos so free / ball joints (where nq != nv) are
-            # advanced correctly instead of naive qpos += dq.
+            # Only move the 7 arm DoFs; the gripper / freejoint columns are
+            # zeroed so they don't contribute to the solution.
+            jp_a = jp[:, :n_arm]
+            JJT = jp_a @ jp_a.T + self.ik_damping ** 2 * np.eye(3)
+            dq_arm = jp_a.T @ np.linalg.solve(JJT, err)
+            dq = np.zeros(nv)
+            dq[:n_arm] = dq_arm
             mujoco.mj_integratePos(self.model, d.qpos, dq, step)
             self._clamp_to_joint_limits(d.qpos)
         self._q_target = d.qpos[: self.model.nq].copy()
@@ -266,6 +305,7 @@ class IiwaEEController:
         d = self._ik_data
         d.qpos[: self.model.nq] = self._q_target
         nv = self.model.nv
+        n_arm = self.ARM_NV
         jp = np.zeros((3, nv))
         jr = np.zeros((3, nv))
         step = 0.5
@@ -292,10 +332,11 @@ class IiwaEEController:
                 return float(max(np.linalg.norm(pos_err), np.linalg.norm(ori_err)))
 
             mujoco.mj_jacBody(self.model, d, jp, jr, self.ee_body_id)
-            J = np.vstack([jp, jr])
+            J = np.vstack([jp, jr])[:, :n_arm]  # arm-only Jacobian
             err = np.concatenate([pos_err, ori_err])
-            dq = J.T @ np.linalg.solve(J @ J.T + lam2, err)
-            # See note in _ik_pos_only: mj_integratePos handles free/ball joints.
+            dq_arm = J.T @ np.linalg.solve(J @ J.T + lam2, err)
+            dq = np.zeros(nv)
+            dq[:n_arm] = dq_arm
             mujoco.mj_integratePos(self.model, d.qpos, dq, step)
             self._clamp_to_joint_limits(d.qpos)
         self._q_target = d.qpos[: self.model.nq].copy()

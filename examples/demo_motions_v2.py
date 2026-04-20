@@ -53,6 +53,7 @@ def smoothstep(t: float) -> float:
 def ik_dls_pos(model, data, body_id, target_pos, q0,
                max_iter=200, tol=5e-4, damping=0.05, step=0.5):
     data.qpos[:] = q0
+    n_arm = 7
     for _ in range(max_iter):
         mujoco.mj_forward(model, data)
         xpos = data.xpos[body_id] + data.xmat[body_id].reshape(3,3) @ TOOL_OFFSET
@@ -61,9 +62,10 @@ def ik_dls_pos(model, data, body_id, target_pos, q0,
             return data.qpos.copy()
         jp = np.zeros((3, model.nv)); jr = np.zeros((3, model.nv))
         mujoco.mj_jacBody(model, data, jp, jr, body_id)
-        dq = jp.T @ np.linalg.solve(jp @ jp.T + damping**2 * np.eye(3), err)
-        data.qpos[:] = data.qpos + step * dq
-        for j in range(model.njnt):
+        jp_a = jp[:, :n_arm]
+        dq_arm = jp_a.T @ np.linalg.solve(jp_a @ jp_a.T + damping**2 * np.eye(3), err)
+        data.qpos[:n_arm] = data.qpos[:n_arm] + step * dq_arm
+        for j in range(n_arm):
             if model.jnt_limited[j]:
                 lo, hi = model.jnt_range[j]
                 data.qpos[j] = np.clip(data.qpos[j], lo, hi)
@@ -75,6 +77,7 @@ def ik_dls_6dof(model, data, body_id, target_pos, target_quat, q0,
                 damping_pos=0.05, damping_ori=0.1, step=0.5,
                 pos_weight=1.0, ori_weight=0.5):
     data.qpos[:] = q0
+    n_arm = 7
     for _ in range(max_iter):
         mujoco.mj_forward(model, data)
         xpos = data.xpos[body_id] + data.xmat[body_id].reshape(3,3) @ TOOL_OFFSET
@@ -93,12 +96,12 @@ def ik_dls_6dof(model, data, body_id, target_pos, target_quat, q0,
 
         jp = np.zeros((3, model.nv)); jr = np.zeros((3, model.nv))
         mujoco.mj_jacBody(model, data, jp, jr, body_id)
-        J = np.vstack([pos_weight * jp, ori_weight * jr])
+        J = np.vstack([pos_weight * jp, ori_weight * jr])[:, :n_arm]
         err = np.concatenate([pos_weight * pos_err, ori_weight * ori_err])
         lam2 = np.diag([damping_pos**2]*3 + [damping_ori**2]*3)
-        dq = J.T @ np.linalg.solve(J @ J.T + lam2, err)
-        data.qpos[:] = data.qpos + step * dq
-        for j in range(model.njnt):
+        dq_arm = J.T @ np.linalg.solve(J @ J.T + lam2, err)
+        data.qpos[:n_arm] = data.qpos[:n_arm] + step * dq_arm
+        for j in range(n_arm):
             if model.jnt_limited[j]:
                 lo, hi = model.jnt_range[j]
                 data.qpos[j] = np.clip(data.qpos[j], lo, hi)

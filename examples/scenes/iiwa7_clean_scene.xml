@@ -1,10 +1,13 @@
 <mujoco model="iiwa7_clean_scene">
   <!-- Clean scene for motion demos that draw their own reference overlay
-       at runtime via mjvScene user geoms (see demo_motions.py). -->
+       at runtime via mjvScene user geoms (see demo_motions.py).
 
-  <include file="../../iiwa7_mjcf/iiwa7_tuned.xml"/>
+       Uses the iiwa7 + Robotiq 2F-85 composite model so every demo runs
+       with the gripper attached. nq=13 (arm 7 + gripper 6), nu=8. -->
 
-  <compiler meshdir="../../iiwa7_mjcf/meshes"/>
+  <include file="../../iiwa7_mjcf/iiwa7_with_gripper.xml"/>
+
+  <compiler meshdir="../../iiwa7_mjcf"/>
   <visual>
     <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
     <rgba haze="0.15 0.25 0.35 1"/>
@@ -25,4 +28,11 @@
     <light pos="0 0 1.8" dir="0 0 -1" directional="true"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
   </worldbody>
+
+  <keyframe>
+    <!-- qpos: arm*7 + gripper*6 = 13 ; ctrl: arm*7 + gripper*1 = 8 -->
+    <key name="home"
+         qpos="0 0 0 0 0 0 0   0 0 0 0 0 0"
+         ctrl="0 0 0 0 0 0 0   0"/>
+  </keyframe>
 </mujoco>

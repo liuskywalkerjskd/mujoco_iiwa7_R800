@@ -85,6 +85,7 @@ def ik_dls(
     restores-nothing at the end; caller should reset if needed.
     """
     data.qpos[:] = q0
+    n_arm = 7  # iiwa has 7 DoFs; any extras (gripper fingers) stay put.
     for _ in range(max_iter):
         mujoco.mj_forward(model, data)
         xpos = data.xpos[body_id] + data.xmat[body_id].reshape(3, 3) @ tool_offset
@@ -95,12 +96,12 @@ def ik_dls(
         jac_pos = np.zeros((3, model.nv))
         jac_rot = np.zeros((3, model.nv))
         mujoco.mj_jacBody(model, data, jac_pos, jac_rot, body_id)
-        # damped least squares
-        JJT = jac_pos @ jac_pos.T + damping**2 * np.eye(3)
-        dq = jac_pos.T @ np.linalg.solve(JJT, err)
-        data.qpos[:] = data.qpos + step * dq
-        # respect joint limits
-        for j in range(model.njnt):
+        jp_a = jac_pos[:, :n_arm]
+        JJT = jp_a @ jp_a.T + damping**2 * np.eye(3)
+        dq_arm = jp_a.T @ np.linalg.solve(JJT, err)
+        data.qpos[:n_arm] = data.qpos[:n_arm] + step * dq_arm
+        # respect joint limits (arm only; gripper/freejoint DoFs untouched)
+        for j in range(n_arm):
             if model.jnt_limited[j]:
                 lo, hi = model.jnt_range[j]
                 data.qpos[j] = np.clip(data.qpos[j], lo, hi)

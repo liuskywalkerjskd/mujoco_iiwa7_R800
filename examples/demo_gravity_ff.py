@@ -67,6 +67,7 @@ def smoothstep(t): t = max(0.0, min(1.0, t)); return t*t*(3-2*t)
 def ik_dls(model, data, body_id, target, q0, tool_offset,
            max_iter=200, tol=5e-4, damping=0.05, step=0.5):
     data.qpos[:] = q0
+    n_arm = 7
     for _ in range(max_iter):
         mujoco.mj_forward(model, data)
         xpos = data.xpos[body_id] + data.xmat[body_id].reshape(3,3) @ tool_offset
@@ -76,9 +77,10 @@ def ik_dls(model, data, body_id, target, q0, tool_offset,
         jp = np.zeros((3, model.nv))
         jr = np.zeros((3, model.nv))
         mujoco.mj_jacBody(model, data, jp, jr, body_id)
-        dq = jp.T @ np.linalg.solve(jp @ jp.T + damping**2 * np.eye(3), err)
-        data.qpos[:] = data.qpos + step * dq
-        for j in range(model.njnt):
+        jp_a = jp[:, :n_arm]
+        dq_arm = jp_a.T @ np.linalg.solve(jp_a @ jp_a.T + damping**2 * np.eye(3), err)
+        data.qpos[:n_arm] = data.qpos[:n_arm] + step * dq_arm
+        for j in range(n_arm):
             if model.jnt_limited[j]:
                 lo, hi = model.jnt_range[j]
                 data.qpos[j] = np.clip(data.qpos[j], lo, hi)

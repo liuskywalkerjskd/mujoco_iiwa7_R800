@@ -5,9 +5,9 @@
          EE during the grab phase (Python code sets data.mocap_pos each step)
   -->
 
-  <include file="../../iiwa7_mjcf/iiwa7_tuned.xml"/>
+  <include file="../../iiwa7_mjcf/iiwa7_with_gripper.xml"/>
 
-  <compiler meshdir="../../iiwa7_mjcf/meshes"/>
+  <compiler meshdir="../../iiwa7_mjcf"/>
   <visual>
     <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
     <rgba haze="0.15 0.25 0.35 1"/>
@@ -44,4 +44,12 @@
             material="cube_mat" contype="0" conaffinity="0"/>
     </body>
   </worldbody>
+
+  <keyframe>
+    <!-- mocap cube does NOT add to qpos (mocap bodies aren't jointed);
+         layout is arm*7 + gripper*6 = 13 qpos, arm*7 + gripper*1 = 8 ctrl. -->
+    <key name="home"
+         qpos="0 0 0 0 0 0 0   0 0 0 0 0 0"
+         ctrl="0 0 0 0 0 0 0   0"/>
+  </keyframe>
 </mujoco>

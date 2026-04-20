@@ -82,15 +82,15 @@ def main() -> int:
             alpha = smooth(t / RAMP_S)
             target = home_q + alpha * (ready_q - home_q)
         else:
-            # sinusoidal sweep around ready pose
+            # sinusoidal sweep around ready pose (arm DoFs only; gripper
+            # qpos[7:] stays at whatever ready_q carries).
             w = 2 * np.pi * 0.25  # 0.25 Hz
             phase = t - RAMP_S
-            offset = np.zeros(7)
-            offset[0] = 0.5 * np.sin(w * phase)
-            offset[1] = 0.25 * np.sin(w * phase + 0.5)
-            offset[3] = 0.25 * np.sin(w * phase + 1.0)
-            offset[5] = 0.5 * np.sin(w * phase + 1.5)
-            target = ready_q + offset
+            target = ready_q.copy()
+            target[0] += 0.5  * np.sin(w * phase)
+            target[1] += 0.25 * np.sin(w * phase + 0.5)
+            target[3] += 0.25 * np.sin(w * phase + 1.0)
+            target[5] += 0.5  * np.sin(w * phase + 1.5)
 
         ctrl.set_joint_target(target)
         for _ in range(sim_steps_per_frame):
