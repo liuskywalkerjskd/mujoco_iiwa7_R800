@@ -10,10 +10,30 @@ on the flange with a full real-physics pick-and-place demo.
 ## Installation
 
 ```bash
-git clone <this repo>
+git clone https://github.com/liuskywalkerjskd/iiwa7-mujoco.git
 cd iiwa7-mujoco
-pip install mujoco scipy imageio imageio-ffmpeg
 ```
+
+### Python environment (recommended: `conda` `libero`)
+
+If you already have `libero`, activate it:
+
+```bash
+conda activate libero
+```
+
+Install runtime dependencies:
+
+```bash
+pip install mujoco scipy imageio imageio-ffmpeg
+pip install "pyspacemouse<2" easyhid-ng hidapi
+```
+
+Notes:
+
+- `pyspacemouse<2` is used for Python 3.8 compatibility.
+- The demo includes a compatibility fallback for some SpaceMouse devices
+  that report no serial number.
 
 ## Quick start
 
@@ -29,6 +49,66 @@ Headless render of the flagship demo (display-less server, EGL):
 MUJOCO_GL=egl python3 examples/demo_current_state_ff.py
 # -> media/videos/demo_square_current_state_ff.mp4
 ```
+
+## SpaceMouse live teleop (Linux, complete setup)
+
+This repo includes a 6-DoF SpaceMouse demo:
+
+```bash
+python examples/demo_spacemouse_teleop.py --live
+```
+
+### 1. Configure Linux device permissions
+
+Install udev rules (covers both `hidraw` and `usb` backends used by
+different hidapi/easyhid builds):
+
+```bash
+sudo usermod -a -G plugdev $USER
+sudo cp pyspacemouse.rules /etc/udev/rules.d/99-spacemouse.rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+Then:
+
+1. Unplug/replug SpaceMouse.
+2. Re-login (or reboot) so `plugdev` group membership is refreshed.
+
+### 2. Launch live teleop
+
+Some environments require preloading the `hid` extension so easyhid can
+resolve HID symbols correctly. Compute the path dynamically and launch:
+
+```bash
+export HID_SO=$(python -c "import hid; print(hid.__file__)")
+LD_PRELOAD=$HID_SO python examples/demo_spacemouse_teleop.py --live
+```
+
+### 3. Mapping controls (optional)
+
+The script supports mapping presets and sign overrides:
+
+```bash
+LD_PRELOAD=$HID_SO python examples/demo_spacemouse_teleop.py --live --map intuitive
+LD_PRELOAD=$HID_SO python examples/demo_spacemouse_teleop.py --live --map kuka
+LD_PRELOAD=$HID_SO python examples/demo_spacemouse_teleop.py --live --pos-sign 1,-1,1 --rot-sign 1,1,-1
+```
+
+### 4. Headless verification without hardware
+
+```bash
+python examples/demo_spacemouse_teleop.py --record --duration 6 --out /tmp/spacemouse_teleop_test.mp4
+```
+
+### Troubleshooting
+
+- `No found any connected or supported devices`:
+  device is not visible to userspace; check cable/dongle and replug.
+- `Failed to open device`:
+  usually udev/group permission issue; re-check `plugdev` + rules.
+- `undefined symbol: hid_enumerate`:
+  run with `LD_PRELOAD=$HID_SO` as shown above.
 
 Minimal Python API (joint-space):
 

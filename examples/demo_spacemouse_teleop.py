@@ -34,7 +34,10 @@ Install (once):
 
 On Linux you may need:
     sudo usermod -a -G plugdev $USER
-    sudo cp <repo>/pyspacemouse.rules /etc/udev/rules.d/   # optional
+    sudo cp <repo>/pyspacemouse.rules /etc/udev/rules.d/99-spacemouse.rules
+    sudo udevadm control --reload-rules
+    sudo udevadm trigger
+    # unplug/replug the SpaceMouse afterwards
 """
 from __future__ import annotations
 
@@ -65,18 +68,32 @@ SCENE = REPO / "examples" / "scenes" / "iiwa7_with_gripper_scene.xml"
 CTRL_HZ = 30.0
 DEVICE_HZ = 200.0
 
-# Copied verbatim from KUKA-Controller so the operator feel matches.
-# Row i of TX maps spnav axis i onto a robot-base axis.
-#   spnav +x (right)   -> base -z (up)         [yes, sign -1]
-#   spnav +y (toward)  -> base +x (forward)
-#   spnav +z (up)      -> base +y (left)
-TX_ZUP_SPNAV = np.array(
-    [[0.0, 0.0, -1.0],
-     [1.0, 0.0, 0.0],
-     [0.0, 1.0, 0.0]]
-)
-# Axis signs on the rotation channel (reference uses [-1, +1, -1]).
-ROT_SIGN = np.array([-1.0, 1.0, -1.0])
+# Mapping presets. "kuka" matches KUKA-Controller feel, while "intuitive"
+# keeps SpaceMouse XYZ channels aligned with robot-base XYZ for easier use.
+MAP_PRESETS = {
+    "kuka": {
+        "pos_tx": np.array([[0.0, 0.0, -1.0],
+                            [1.0, 0.0, 0.0],
+                            [0.0, 1.0, 0.0]]),
+        "rot_tx": np.array([[0.0, 0.0, -1.0],
+                            [1.0, 0.0, 0.0],
+                            [0.0, 1.0, 0.0]]),
+        "pos_sign": np.array([1.0, 1.0, 1.0]),
+        "rot_sign": np.array([-1.0, 1.0, -1.0]),
+    },
+    "intuitive": {
+        "pos_tx": np.array([[0.0, 1.0, 0.0],
+                            [1.0, 0.0, 0.0],
+                            [0.0, 0.0, 1.0]]),
+        # Keep rotation channels aligned: roll<-roll, pitch<-pitch, yaw<-yaw.
+        "rot_tx": np.array([[1.0, 0.0, 0.0],
+                            [0.0, 1.0, 0.0],
+                            [0.0, 0.0, 1.0]]),
+        # Invert XY translation directions.
+        "pos_sign": np.array([1.0, -1.0, 1.0]),
+        "rot_sign": np.array([1.0, 1.0, -1.0]),
+    },
+}
 
 MAX_POS_SPEED = 0.25   # m/s at full-stick translation
 MAX_ROT_SPEED = 0.9    # rad/s at full-stick rotation
@@ -113,12 +130,56 @@ class TeleopState:
 class PySpaceMouseSource:
     """Real 3Dconnexion device via pyspacemouse (hidapi backend)."""
 
+    @staticmethod
+    def _open_with_py38_fallback(pyspacemouse) -> bool:
+        """Open device with a compatibility path for older pyspacemouse builds.
+
+        pyspacemouse 1.x may crash on some Linux systems when
+        ``device.serial_number`` is None (TypeError in open()) even though the
+        device is present and readable. In that case, patch the per-device open
+        routine to tolerate missing serial numbers and retry once.
+        """
+        cls = getattr(pyspacemouse, "DeviceSpec", None)
+        if cls is not None:
+            orig_open = cls.open
+
+            def _safe_open(self):  # noqa: ANN001 - mirrors upstream signature
+                if self.device:
+                    try:
+                        self.device.open()
+                    except Exception as inner:
+                        raise Exception("Failed to open device") from inner
+                self.product_name = self.device.product_string
+                self.vendor_name = self.device.manufacturer_string
+                self.version_number = self.device.release_number
+                serial = getattr(self.device, "serial_number", None)
+                self.serial_number = (
+                    "".join(f"{ord(ch):02X}" for ch in serial) if serial else ""
+                )
+
+            cls.open = _safe_open
+            try:
+                return bool(pyspacemouse.open())
+            finally:
+                cls.open = orig_open
+        return bool(pyspacemouse.open())
+
     def __init__(self, state: TeleopState, rate_hz: float = DEVICE_HZ) -> None:
         import pyspacemouse  # local import so --record works without hidapi
-        if not pyspacemouse.open():
+        try:
+            opened = self._open_with_py38_fallback(pyspacemouse)
+        except Exception as e:
+            raise RuntimeError(
+                "pyspacemouse.open() failed. On Linux, install udev rules from "
+                f"{REPO/'pyspacemouse.rules'} (includes hidraw+usb permissions), "
+                "reload udev, unplug/replug the device, and ensure this user is in "
+                f"'plugdev'. Original error: {e}"
+            ) from e
+        if not opened:
             raise RuntimeError(
                 "pyspacemouse.open() failed. Check that a 3Dconnexion device "
-                "is plugged in and that the current user can read it (udev)."
+                "is plugged in and that the current user can read it "
+                "(hidraw+usb udev permissions)."
             )
         self.pyspacemouse = pyspacemouse
         self.state = state
@@ -227,10 +288,16 @@ class TeleopController:
     """Holds the integrated EE target in BASE frame + gripper setpoint."""
 
     def __init__(self, model: mujoco.MjModel, data: mujoco.MjData,
-                 ctrl: IiwaEEController) -> None:
+                 ctrl: IiwaEEController, pos_tx_map: np.ndarray,
+                 rot_tx_map: np.ndarray,
+                 pos_sign: np.ndarray, rot_sign: np.ndarray) -> None:
         self.model = model
         self.data = data
         self.ctrl = ctrl
+        self.pos_tx_map = np.asarray(pos_tx_map, dtype=float).reshape(3, 3)
+        self.rot_tx_map = np.asarray(rot_tx_map, dtype=float).reshape(3, 3)
+        self.pos_sign = np.asarray(pos_sign, dtype=float).reshape(3)
+        self.rot_sign = np.asarray(rot_sign, dtype=float).reshape(3)
         # Snapshot base-frame pose at the current configuration. We take the
         # pose of link_7+tool_offset expressed relative to iiwa_link_0.
         mujoco.mj_forward(model, data)
@@ -265,10 +332,10 @@ class TeleopController:
         self.target_quat_wxyz = self._home_quat_wxyz.copy()
 
     def step(self, axes: np.ndarray, buttons: np.ndarray, dt: float) -> np.ndarray:
-        # --- axes -> base-frame deltas (KUKA-Controller convention) ---
+        # --- axes -> base-frame deltas ---
         a = deadzone(axes, DEADZONE_POS, DEADZONE_ROT)
-        a_pos = TX_ZUP_SPNAV @ a[:3]
-        a_rot = (TX_ZUP_SPNAV @ a[3:]) * ROT_SIGN
+        a_pos = (self.pos_tx_map @ a[:3]) * self.pos_sign
+        a_rot = (self.rot_tx_map @ a[3:]) * self.rot_sign
         dpos = a_pos * (MAX_POS_SPEED * dt)
         drot = a_rot * (MAX_ROT_SPEED * dt)
 
@@ -417,6 +484,12 @@ def run_record(model, data, ctrl: IiwaEEController, teleop: TeleopController,
 
 
 def main() -> int:
+    def parse_vec3(text: str) -> np.ndarray:
+        vals = [float(x.strip()) for x in text.split(",")]
+        if len(vals) != 3:
+            raise argparse.ArgumentTypeError("Expected 3 comma-separated numbers, e.g. 1,1,-1")
+        return np.asarray(vals, dtype=float)
+
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--live", action="store_true",
                    help="interactive passive viewer + real 3Dconnexion SpaceMouse")
@@ -427,6 +500,12 @@ def main() -> int:
                    default=REPO / "media" / "videos" / "spacemouse_teleop.mp4")
     p.add_argument("--duration", type=float, default=18.0,
                    help="(record mode) seconds of video to render")
+    p.add_argument("--map", choices=sorted(MAP_PRESETS.keys()), default="intuitive",
+                   help="axis mapping preset for live/record teleop")
+    p.add_argument("--pos-sign", type=parse_vec3, default=None,
+                   help="multiply mapped translation channels by sx,sy,sz (e.g. 1,1,-1)")
+    p.add_argument("--rot-sign", type=parse_vec3, default=None,
+                   help="multiply mapped rotation channels by sx,sy,sz (e.g. 1,-1,1)")
     args = p.parse_args()
 
     if not args.live and not args.record:
@@ -437,7 +516,15 @@ def main() -> int:
     data = mujoco.MjData(model)
     mujoco.mj_resetDataKeyframe(model, data, model.key("home").id)
     ctrl = IiwaEEController(model, data, mode="full_id_ff_current")
-    teleop = TeleopController(model, data, ctrl)
+    mapping = MAP_PRESETS[args.map]
+    pos_tx = mapping["pos_tx"]
+    rot_tx = mapping.get("rot_tx", pos_tx)
+    pos_sign = args.pos_sign if args.pos_sign is not None else mapping["pos_sign"]
+    rot_sign = args.rot_sign if args.rot_sign is not None else mapping["rot_sign"]
+    print(f"[map] preset={args.map}  pos_sign={pos_sign.tolist()}  rot_sign={rot_sign.tolist()}")
+    teleop = TeleopController(model, data, ctrl,
+                              pos_tx_map=pos_tx, rot_tx_map=rot_tx,
+                              pos_sign=pos_sign, rot_sign=rot_sign)
     state = TeleopState()
 
     if args.live:

@@ -1,0 +1,10 @@
+# 3Dconnexion SpaceMouse permissions for pyspacemouse/easyhid.
+#
+# Keep both rules:
+# - hidraw: required when hidapi uses the hidraw backend.
+# - usb   : required when hidapi/easyhid resolves to a libusb backend.
+#
+# Known SpaceMouse Wireless IDs:
+#   VID:PID = 256f:c62e
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", MODE="0664", GROUP="plugdev"
+SUBSYSTEM=="usb", ATTR{idVendor}=="256f", ATTR{idProduct}=="c62e", MODE="0664", GROUP="plugdev"
